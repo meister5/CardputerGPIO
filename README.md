@@ -25,16 +25,6 @@ Pin assignments for every profile are **stored in NVS flash** and survive power 
 
 **M5Stack Cardputer** — no additional hardware required to run the tool itself. Connect your target circuit to the expansion header pins listed below.
 
-### Expansion Header Pinout
-
-```
-┌─────────────────────────────────────────┐
-│  G3   G4   G6  G40  G14  G39   G5      │  ← Row 1
-│  5V        5V   G8   G9  G13  G15      │  ← Row 2
-│  IN   GND  OUT  SDA  SCL               │
-└─────────────────────────────────────────┘
-```
-
 | GPIO | Notes |
 |------|-------|
 | G3, G4, G5, G6 | General I/O, ADC1-capable |
