@@ -118,6 +118,14 @@ one device and boots whichever you pick, so you do not have to reflash to swap
 between them. It installs application binaries into an OTA app partition, which
 means the **app** binary is the one to hand it — not the merged image:
 
+A prebuilt copy sits at the repo root, refreshed at each release, so you do
+not have to build anything:
+
+<https://raw.githubusercontent.com/meister5/CardputerGPIO/main/CardputerGPIO-app.bin>
+
+That URL is directly downloadable, which is what an `OTA > Favorites` entry
+needs. To install from SD instead:
+
 1. Copy `CardputerGPIO-app.bin` to a FAT32 SD card (MBR, 32 GB or less).
 2. In Launcher, open `SD`, select the file, choose `Install`.
 

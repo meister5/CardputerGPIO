@@ -3,3 +3,7 @@ build/
 *.elf
 *.map
 .DS_Store
+
+# ...except the released images kept at the repo root, so M5Launcher's
+# OTA > Favorites can point straight at a raw URL.
+!/*.bin
