@@ -1,0 +1,74 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+env:
+  M5_INDEX: https://static-cdn.m5stack.com/resource/arduino/package_m5stack_index.json
+  CORE_VERSION: "3.3.9"
+
+jobs:
+  firmware:
+    name: firmware compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Arduino data
+        uses: actions/cache@v4
+        with:
+          path: ~/.arduino15
+          key: arduino15-${{ runner.os }}-m5stack-${{ env.CORE_VERSION }}-m5cardputer1.1.1
+
+      - name: Install arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Install core and libraries
+        run: |
+          arduino-cli core update-index --additional-urls "$M5_INDEX"
+          arduino-cli core install "m5stack:esp32@${CORE_VERSION}" --additional-urls "$M5_INDEX"
+          arduino-cli lib install "M5Cardputer@1.1.1" "M5Unified@0.2.20" "M5GFX@0.2.27"
+
+      - name: Build release binaries
+        run: tools/package.sh
+
+      - name: Report image sizes
+        run: ls -l dist/
+
+      # The radio-silent build has to keep fitting the stock 1.2 MB partition,
+      # which is the whole point of the CG_ENABLE_WEB switch. Nothing ships from
+      # here; it is a regression guard on that claim.
+      - name: Compile the lean no-radio build
+        run: |
+          arduino-cli compile \
+            --fqbn "m5stack:esp32:m5stack_cardputer:PSRAM=disabled" \
+            --build-property "compiler.cpp.extra_flags=-DCG_ENABLE_WEB=0" .
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: CardputerGPIO-binaries
+          path: dist/*.bin
+          if-no-files-found: error
+
+  release:
+    name: publish release
+    needs: [firmware]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: CardputerGPIO-binaries
+          path: dist
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.bin
+          generate_release_notes: true
