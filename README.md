@@ -63,7 +63,7 @@ the error you get if you forget is the unhelpful `text section exceeds
 available space in board`. With the 8 MB scheme the build sits at about 41%.
 
 If you would rather not have the radio at all, set `CG_ENABLE_WEB` to `0` in
-[`src/core/Config.h`](src/core/Config.h). That build is 702 kB and fits the
+[`src/core/Config.h`](src/core/Config.h). That build is 703 kB and fits the
 default partition; everything except the web interface is identical.
 
 | Setting            | Value                                      |
@@ -74,8 +74,8 @@ default partition; everything except the web interface is identical.
 ### 4. Flash it
 
 Clone or download this repository, open `CardputerGPIO.ino`, pick the port and
-press upload. The sketch is about 1.37 MB, roughly 41% of the 3 MB partition —
-or 702 kB with `CG_ENABLE_WEB` set to `0`.
+press upload. The sketch is about 1.38 MB, roughly 41% of the 3 MB partition —
+or 703 kB with `CG_ENABLE_WEB` set to `0`.
 
 <details>
 <summary>Building from the command line instead</summary>
@@ -143,10 +143,14 @@ Two costs, both real:
   reading zero. Nothing else is affected.
 * **It needs the 3 MB app partition**, as described above.
 
-There is no access control: anyone who can reach the page can drive every pin,
-exactly as if they had picked the device up. That is a fair match to what a
-bench tool is, but it is worth knowing before leaving autostart on a network
-you share. Full details and the HTTP API are in [docs/WEB.md](docs/WEB.md).
+**Set a password if you put it on a shared network.** Out of the box there is
+none, which is the right default on the board's own access point — that radio
+is already WPA2. On a network you share, anyone who can reach the page can
+drive every pin, exactly as if they had picked the device up. Settings ->
+Access sets one; the username is `cardputer`. Forgot it? Open the Web
+Interface tool and press `W`, which clears the password without touching your
+saved pin assignments. Full details and the HTTP API are in
+[docs/WEB.md](docs/WEB.md).
 
 ---
 
@@ -196,7 +200,7 @@ you share. Full details and the HTTP API are in [docs/WEB.md](docs/WEB.md).
 | **Board Info** | chip, memory, battery, the full header table and what owns every internal pin |
 | **Saved Setups** | snapshot every tool's pin assignments under a name and recall it — one setup per rig |
 | **Settings** | brightness, key beep, log interval, and the two safety switches |
-| **Web Interface** | access point or join a network; scan, connect, show the address |
+| **Web Interface** | access point or join a network; scan, connect, show the address, clear the web password |
 
 ---
 

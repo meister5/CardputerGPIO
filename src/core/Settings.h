@@ -53,6 +53,13 @@ public:
     const char* apPass() const { return _apPass; }
     void setApPass(const char* pass);
 
+    // Optional password for the web interface. Empty means no login, which
+    // is the right default on the device's own access point: that radio is
+    // already WPA2. It matters on a shared network, where anything that can
+    // route to the board would otherwise be able to drive its pins.
+    const char* webPass() const { return _webPass; }
+    void setWebPass(const char* pass);
+
     // Start the portal at boot rather than waiting to be asked.
     bool wifiAuto() const { return _wifiAuto; }
     void setWifiAuto(bool v);
@@ -74,6 +81,7 @@ private:
     char    _ssid[33]   = {};
     char    _pass[65]   = {};
     char    _apPass[17] = {};
+    char    _webPass[33] = {};
 
     void putU8(const char* key, uint8_t v);
     static void keyFor(const char* toolId, int role, char* out, int n);

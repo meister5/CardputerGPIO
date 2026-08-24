@@ -165,6 +165,18 @@ bool ToolWiFi::onKey(const KeyEvent& ev) {
                 ui.notify("new password on next start");
                 return true;
             }
+            // The way back in after forgetting the web password. Without
+            // this the only recovery would be a factory reset, which also
+            // throws away every saved pin assignment.
+            if (ev.ci('w')) {
+                if (settings.webPass()[0]) {
+                    settings.setWebPass("");
+                    ui.notify("web password cleared");
+                } else {
+                    ui.notify("no web password set");
+                }
+                return true;
+            }
             return false;
         default:
             return false;
@@ -226,6 +238,13 @@ void ToolWiFi::drawMain() {
     else
         ui.textf(6, BODY_B - 9, C_FAINT, "boot: %s",
                  settings.wifiAuto() ? "auto-start" : "manual");
+
+    // Whether the browser is asked for a password, and the key that clears
+    // it -- this is the only way back in after forgetting it.
+    if (settings.webPass()[0])
+        ui.text(SCR_W - 86, BODY_B - 9, C_WARN,  "web locked [W]");
+    else
+        ui.text(SCR_W - 86, BODY_B - 9, C_FAINT, "web open");
 }
 
 void ToolWiFi::drawPick() {

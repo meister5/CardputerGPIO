@@ -17,3 +17,9 @@
 
 // Default hostname; the portal is reachable at http://<this>.local
 #define CG_HOSTNAME "cardputer"
+
+// The web interface asks for a password only when one has been set. The
+// username is fixed: one board, one operator, so a second field would be
+// ceremony rather than security.
+#define CG_WEB_USER  "cardputer"
+#define CG_WEB_REALM "CardputerGPIO"

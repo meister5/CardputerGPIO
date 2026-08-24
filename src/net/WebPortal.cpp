@@ -182,29 +182,48 @@ const char* WebPortal::statusText() const {
 }
 
 // ── Routes ────────────────────────────────────────────────────────────────
+bool WebPortal::authOk() {
+    const char* pw = settings.webPass();
+    if (!pw || !*pw) return true;                 // no password set: open
+    if (_server.authenticate(CG_WEB_USER, pw)) return true;
+    _server.requestAuthentication(BASIC_AUTH, CG_WEB_REALM,
+                                  "{\"ok\":false,\"error\":\"bad password\"}");
+    return false;
+}
+
 void WebPortal::routes() {
-    _server.on("/",                  HTTP_GET,  [this] { hIndex(); });
-    _server.on("/api/state",         HTTP_GET,  [this] { hState(); });
-    _server.on("/api/tools",         HTTP_GET,  [this] { hTools(); });
-    _server.on("/api/tool/open",     HTTP_POST, [this] { hToolOpen(); });
-    _server.on("/api/tool/start",    HTTP_POST, [this] { hToolStart(); });
-    _server.on("/api/tool/back",     HTTP_POST, [this] { hToolBack(); });
-    _server.on("/api/pins",          HTTP_GET,  [this] { hPins(); });
-    _server.on("/api/pin",           HTTP_POST, [this] { hPinSet(); });
-    _server.on("/api/live",          HTTP_GET,  [this] { hLive(); });
-    _server.on("/api/key",           HTTP_POST, [this] { hKey(); });
-    _server.on("/api/screen",        HTTP_GET,  [this] { hScreen(); });
-    _server.on("/api/settings",      HTTP_GET,  [this] { hSettingsGet(); });
-    _server.on("/api/settings",      HTTP_POST, [this] { hSettingsSet(); });
-    _server.on("/api/setups",        HTTP_GET,  [this] { hSetups(); });
-    _server.on("/api/setup",         HTTP_POST, [this] { hSetupAct(); });
-    _server.on("/api/board",         HTTP_GET,  [this] { hBoard(); });
-    _server.on("/api/logs",          HTTP_GET,  [this] { hLogs(); });
-    _server.on("/api/log",           HTTP_GET,  [this] { hLogDownload(); });
-    _server.on("/api/log/ctl",       HTTP_POST, [this] { hLogControl(); });
-    _server.on("/api/wifi",          HTTP_POST, [this] { hWifiSet(); });
-    _server.on("/favicon.ico", HTTP_GET, [this] { _server.send(204); });
-    _server.onNotFound([this] { hNotFound(); });
+    // Every route is wrapped in the same gate rather than each handler
+    // remembering to check, so an endpoint added later cannot quietly skip
+    // the password.
+    auto g = [this](void (WebPortal::*fn)()) {
+        return [this, fn] { if (authOk()) (this->*fn)(); };
+    };
+
+    _server.on("/",                  HTTP_GET,  g(&WebPortal::hIndex));
+    _server.on("/api/state",         HTTP_GET,  g(&WebPortal::hState));
+    _server.on("/api/tools",         HTTP_GET,  g(&WebPortal::hTools));
+    _server.on("/api/tool/open",     HTTP_POST, g(&WebPortal::hToolOpen));
+    _server.on("/api/tool/start",    HTTP_POST, g(&WebPortal::hToolStart));
+    _server.on("/api/tool/back",     HTTP_POST, g(&WebPortal::hToolBack));
+    _server.on("/api/pins",          HTTP_GET,  g(&WebPortal::hPins));
+    _server.on("/api/pin",           HTTP_POST, g(&WebPortal::hPinSet));
+    _server.on("/api/live",          HTTP_GET,  g(&WebPortal::hLive));
+    _server.on("/api/key",           HTTP_POST, g(&WebPortal::hKey));
+    _server.on("/api/screen",        HTTP_GET,  g(&WebPortal::hScreen));
+    _server.on("/api/settings",      HTTP_GET,  g(&WebPortal::hSettingsGet));
+    _server.on("/api/settings",      HTTP_POST, g(&WebPortal::hSettingsSet));
+    _server.on("/api/setups",        HTTP_GET,  g(&WebPortal::hSetups));
+    _server.on("/api/setup",         HTTP_POST, g(&WebPortal::hSetupAct));
+    _server.on("/api/board",         HTTP_GET,  g(&WebPortal::hBoard));
+    _server.on("/api/logs",          HTTP_GET,  g(&WebPortal::hLogs));
+    _server.on("/api/log",           HTTP_GET,  g(&WebPortal::hLogDownload));
+    _server.on("/api/log/ctl",       HTTP_POST, g(&WebPortal::hLogControl));
+    _server.on("/api/wifi",          HTTP_POST, g(&WebPortal::hWifiSet));
+
+    // Left open: a browser asks for this before it can send credentials,
+    // and an empty answer gives nothing away.
+    _server.on("/favicon.ico",       HTTP_GET,  [this] { _server.send(204); });
+    _server.onNotFound(              g(&WebPortal::hNotFound));
 }
 
 void WebPortal::hIndex() {
@@ -263,6 +282,7 @@ void WebPortal::hState() {
     j.kv("rssi", rssi());
     j.kv("status", statusText());
     j.kv("auto", settings.wifiAuto());
+    j.kv("locked", settings.webPass()[0] != '\0');
     j.objClose();
 
     j.obj("log");
@@ -742,6 +762,14 @@ void WebPortal::hWifiSet() {
                                                      : settings.wifiPass());
     if (_server.hasArg("auto"))
         settings.setWifiAuto(argBool(_server, "auto", settings.wifiAuto()));
+
+    // Sending an empty webPass is how the password is removed, so this is
+    // deliberately not guarded by a non-empty check.
+    if (_server.hasArg("webPass")) {
+        settings.setWebPass(_server.arg("webPass").c_str());
+        sendOk(settings.webPass()[0] ? "password set" : "password removed");
+        return;
+    }
 
     if (_server.hasArg("mode")) {
         int m = argInt(_server, "mode", settings.wifiMode());

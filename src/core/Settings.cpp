@@ -23,6 +23,7 @@ void Settings::begin() {
         p.getString("wifissid", _ssid, sizeof(_ssid));
         p.getString("wifipass", _pass, sizeof(_pass));
         p.getString("appass",   _apPass, sizeof(_apPass));
+        p.getString("webpass",  _webPass, sizeof(_webPass));
         p.end();
     }
     if (_wifiMode > NET_STA) _wifiMode = NET_OFF;
@@ -71,6 +72,14 @@ void Settings::setApPass(const char* pass) {
     Preferences p;
     if (!p.begin(NS_CFG, false)) return;
     p.putString("appass", _apPass);
+    p.end();
+}
+
+void Settings::setWebPass(const char* pass) {
+    snprintf(_webPass, sizeof(_webPass), "%s", pass ? pass : "");
+    Preferences p;
+    if (!p.begin(NS_CFG, false)) return;
+    p.putString("webpass", _webPass);
     p.end();
 }
 
@@ -128,6 +137,9 @@ void Settings::factoryReset() {
     _beep       = true;
     _allowSd    = false;
     _armOutputs = true;
+    _wifiMode   = NET_OFF;
+    _wifiAuto   = false;
+    _ssid[0] = _pass[0] = _apPass[0] = _webPass[0] = '\0';
     M5Cardputer.Display.setBrightness(_brightness);
     poolsRebuild();
 }

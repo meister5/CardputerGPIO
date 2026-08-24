@@ -78,7 +78,7 @@ the device. Responses are JSON except where noted.
 | Method | Path | Parameters | Returns |
 | ------ | ---- | ---------- | ------- |
 | GET  | `/` | — | the interface (one gzipped HTML file) |
-| GET  | `/api/state` | — | board, shell state, open tool, heap, battery, WiFi, logging |
+| GET  | `/api/state` | — | board, shell state, open tool, heap, battery, WiFi (incl. `locked`), logging |
 | GET  | `/api/tools` | — | every tool with its roles and current pins |
 | POST | `/api/tool/open` | `id` | open a tool, exactly as picking it in the menu |
 | POST | `/api/tool/start` | `confirm` | start it; `needsArm` comes back when it drives pins |
@@ -96,7 +96,7 @@ the device. Responses are JSON except where noted.
 | GET  | `/api/logs` | — | CSV captures on the card |
 | GET  | `/api/log` | `f` | download one (`text/csv`) |
 | POST | `/api/log/ctl` | `action=start\|stop` | start or stop a capture |
-| POST | `/api/wifi` | `mode`, `ssid`, `pass`, `auto` | configure the radio |
+| POST | `/api/wifi` | `mode`, `ssid`, `pass`, `auto`, `webPass` | configure the radio; `webPass` sets the web password, empty removes it |
 
 `k` is one of `up`, `down`, `left`, `right`, `enter`, `back`, `esc`, `tab`,
 `fdel`, `f1`–`f10`, or `char` with `c` set to a printable ASCII code.
@@ -125,15 +125,38 @@ The pixels are plain RGB565 whatever byte order LovyanGFX is keeping
 internally: `Mirror::tile()` reads through the sprite's own colour converter
 with `setSwapBytes(true)` rather than assuming.
 
-## A note on access control
+## Access control
 
-There is none. Anyone who can reach the page can drive every pin on the
-header, exactly as if they had picked up the device. On the access point that
-means anyone with the password; on your own network it means anyone on that
-network.
+Off by default, and optional.
 
-That is a deliberate match to what the thing is — a bench tool you point at
-your own circuit — but it is worth knowing before you leave it running with
-autostart on a network you share. If that matters for your setup, leave the
-radio off and use the device's own keyboard; the firmware is identical either
-way, and the lean build removes the radio entirely.
+With no password set, anyone who can reach the page can drive every pin on the
+header, exactly as if they had picked up the device. On the board's own access
+point that is fine: the radio is already WPA2, so "anyone who can reach it" is
+"anyone you gave the AP password to". On a network you share, it is not — set a
+password there.
+
+Set one under **Settings -> Access** in the browser, or leave it empty to remove
+it. The username is `cardputer` (fixed; `CG_WEB_USER` in `src/core/Config.h`).
+It is stored in NVS and survives a reboot.
+
+The mechanics:
+
+- Every route is wrapped in a single gate in `WebPortal::routes()` rather than
+  each handler checking for itself, so an endpoint added later cannot quietly
+  skip the password. `/favicon.ico` is the one exception, and it answers 204.
+- Authentication is HTTP Basic, which means the browser's own password box and
+  no session, cookie or login-page code on the device. Over plain HTTP the
+  password is base64, not encrypted — this keeps an honest person out and
+  protects a shared network from accidents. It is not protection against
+  someone already capturing your traffic.
+- The SPA reloads on a 401 rather than trying to handle it: a 401 answered to
+  `fetch()` does not reliably raise the browser's password box, but one
+  answered to a navigation always does.
+
+**If you forget it**, open the Web Interface tool on the device and press `W`.
+The screen shows `web locked [W]` when a password is set. That clears just the
+password — a factory reset would also throw away every saved pin assignment.
+
+For the strongest version of "not reachable", leave the radio off and use the
+device's keyboard; the firmware is identical either way, and the lean build
+(`CG_ENABLE_WEB 0`) removes the radio entirely.
