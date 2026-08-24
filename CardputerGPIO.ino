@@ -1,4 +1,5 @@
 #include <M5Cardputer.h>
+#include "src/core/Config.h"
 #include "src/core/Board.h"
 #include "src/core/Keys.h"
 #include "src/core/UI.h"
@@ -25,6 +26,11 @@
 #include "src/tools/ToolSetups.h"
 #include "src/tools/ToolSettings.h"
 #include "src/tools/ToolBoard.h"
+#if CG_ENABLE_WEB
+#include "src/net/Mirror.h"
+#include "src/net/WebPortal.h"
+#include "src/tools/ToolWiFi.h"
+#endif
 
 void setup() {
     auto cfg = M5.config();
@@ -32,6 +38,9 @@ void setup() {
     cg::settings.begin();
     cg::boardBegin();
     cg::ui.begin();
+#if CG_ENABLE_WEB
+    cg::mirror.begin();
+#endif
     cg::keys.begin();
     cg::pins.begin();
     cg::shell.begin();
@@ -55,10 +64,17 @@ void setup() {
     cg::shell.add(&cg::toolBoard);
     cg::shell.add(&cg::toolSetups);
     cg::shell.add(&cg::toolSettings);
+#if CG_ENABLE_WEB
+    cg::shell.add(&cg::toolWiFi);
+    cg::portal.begin();
+#endif
 }
 
 void loop() {
     M5Cardputer.update();
+#if CG_ENABLE_WEB
+    cg::portal.loop();
+#endif
     cg::shell.run();
     delay(3);
 }

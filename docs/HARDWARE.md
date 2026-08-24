@@ -92,7 +92,13 @@ ESP32-S3 has two ADC blocks:
 * **ADC1** — GPIO 1–10. Usable while WiFi is up.
 * **ADC2** — GPIO 11–20. Shared with the WiFi radio.
 
-This firmware never starts WiFi, so ADC2 pins work here as well as ADC1 ones.
+With the radio off — the default — ADC2 pins work here as well as ADC1 ones.
+Turning on the web interface changes that: **G13 and G15 stop being usable as
+analog inputs for as long as the radio is up**. `pinAdcOk()` withdraws them
+from the ADC pool, the pin picker stops offering them, and the wiring screen
+marks an already-saved assignment in red rather than letting the tool report
+zeros. G14 is the third ADC2 pin on the header, but it is held back for the
+microSD bus anyway.
 
 **G39 and G40 have no ADC at all.** The v1 firmware offered them as analog
 inputs; they read nothing. That is fixed in the table.
@@ -163,3 +169,14 @@ cannot be turned off to the point of looking bricked.
 * `M5Unified` / `M5GFX` board definitions for `board_M5CardputerADV`
 * `M5Cardputer` 1.1.1 keyboard implementation
 * Espressif ESP32-S3 technical reference manual (ADC, LEDC, PCNT, RMT)
+
+## Radio and timing
+
+The logic analyser and the 1-Wire/DHT tool both run their timing loops inside
+`noInterrupts()`, which on this chip disables interrupts on the calling core
+only. The Arduino sketch runs on core 1 and the WiFi task on core 0, so the
+radio does not land in the middle of a capture. It is not perfectly free —
+there is still bus contention and the WiFi task can preempt between captures —
+but it is much smaller than it would be on a single-core part. Anything driven
+by RMT (IR, NeoPixel) or LEDC (PWM, servo) is clocked in hardware and is
+unaffected either way.

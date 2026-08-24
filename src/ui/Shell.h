@@ -27,6 +27,16 @@ public:
     void add(Tool* t);
     void run();          // one frame; call from loop()
 
+    // ── Remote control ────────────────────────────────────────────────────
+    // The web interface drives these rather than duplicating the state
+    // machine, so a browser and the keyboard can never disagree about what
+    // the device is doing.
+    Tool*       activeTool() const { return _active; }
+    const char* stateName()  const;
+    bool        openToolById(const char* id);   // as if it were picked in the menu
+    void        backToMenu();                   // as if DEL were pressed
+    bool        startActiveTool();              // as if ENTER were pressed in wiring
+
     // The registry, so the setup manager can snapshot every tool's pins.
     int   toolCount() const { return _count; }
     Tool* toolAt(int i) const { return (i >= 0 && i < _count) ? _tools[i] : nullptr; }

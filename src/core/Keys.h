@@ -81,6 +81,11 @@ public:
     // Pop one event. Returns false when the queue is empty.
     bool next(KeyEvent& out);
 
+    // Push an event from somewhere that is not the physical keyboard -- the
+    // web interface uses this, so a browser drives exactly the same code
+    // path as the keys on the case.
+    void inject(const KeyEvent& ev);
+
     // Drop anything queued — used when switching screens so a held key does
     // not leak its repeats into the screen you just opened.
     void flush();

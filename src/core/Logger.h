@@ -47,6 +47,12 @@ public:
     // True when the microSD lines are free to be claimed right now.
     static bool sdPinsFree();
 
+    // Mount the card just to look at it -- listing and downloading past
+    // captures from the web interface. A capture already holds the card
+    // mounted, in which case these are no-ops and it stays mounted.
+    bool browseBegin();
+    void browseEnd();
+
 private:
     LogSink  _sink       = LogSink::None;
     uint32_t _rows       = 0;
@@ -57,6 +63,7 @@ private:
     char     _err[40]    = {};
     void*    _fh         = nullptr;   // File*, heap-allocated while open
     bool     _sdMounted  = false;
+    bool     _browsing   = false;
 
     bool mountSd();
     void unmountSd();

@@ -1,11 +1,13 @@
 # CardputerGPIO
 
-A GPIO workbench for the **M5Stack Cardputer ADV**. Twenty tools behind one
+A GPIO workbench for the **M5Stack Cardputer ADV**. Twenty-one tools behind one
 menu: drive pins, measure them, talk to buses, generate signals, and log the
 results to CSV — without writing a sketch for each thing you want to try.
 
-Everything runs on the device. No WiFi, no companion app, no libraries beyond
-the three M5Stack ones.
+Everything runs on the device, and there is nothing to install beyond the three
+M5Stack libraries. Optionally it also serves a **web interface** over WiFi —
+the same tools, driven from a browser with a real keyboard and a big screen,
+which is a much nicer place to assign pins. See [docs/WEB.md](docs/WEB.md).
 
 > **Board support:** Cardputer **ADV** only. The pin map, the keyboard driver
 > and the I²C layout all differ from the original Cardputer v1.1 — see
@@ -43,24 +45,37 @@ well; the ADV is distinguished at runtime, not at compile time.
 | **M5GFX**       | 0.2.10  | 0.2.27  | display driver and the `M5Canvas` sprite |
 
 Installing **M5Cardputer** pulls in the other two as dependencies — say yes
-when the IDE offers. Nothing else is needed: 1-Wire, DHT, NeoPixel, IR and SPI
-are all implemented in this repository rather than pulled from libraries, so
-there is no version roulette and the timing stays where it can be read.
+when the IDE offers. **That is the whole list.** 1-Wire, DHT, NeoPixel, IR, SPI
+and the JSON the web interface speaks are all implemented in this repository
+rather than pulled from libraries, so there is no version roulette and the
+timing stays where it can be read. WiFi, WebServer, ESPmDNS, SD and Preferences
+ship with the ESP32 core itself and need no action in Library Manager.
 
 ### 3. Board settings
 
-The defaults that come with the M5Cardputer board selection are correct — you
-do not need to change anything. Two worth knowing about:
+One setting **must** be changed from the default:
+
+**Tools → Partition Scheme → "8M with spiffs (3MB APP/1.5MB SPIFFS)"**
+
+The web interface brings in WiFi, the HTTP server and mDNS, which together add
+about 630 kB. That does not fit the board's default 1.2 MB app partition, and
+the error you get if you forget is the unhelpful `text section exceeds
+available space in board`. With the 8 MB scheme the build sits at about 41%.
+
+If you would rather not have the radio at all, set `CG_ENABLE_WEB` to `0` in
+[`src/core/Config.h`](src/core/Config.h). That build is 702 kB and fits the
+default partition; everything except the web interface is identical.
 
 | Setting            | Value                                      |
 | ------------------ | ------------------------------------------ |
+| Partition scheme   | **8M with spiffs (3MB APP)** — required for the web build |
 | PSRAM              | **Disabled** — the StampS3A has none, and enabling it will not boot |
-| Partition scheme   | Default (1.2 MB app) — the sketch uses about half of it |
 
 ### 4. Flash it
 
 Clone or download this repository, open `CardputerGPIO.ino`, pick the port and
-press upload. The sketch is about 700 kB, roughly half the app partition.
+press upload. The sketch is about 1.37 MB, roughly 41% of the 3 MB partition —
+or 702 kB with `CG_ENABLE_WEB` set to `0`.
 
 <details>
 <summary>Building from the command line instead</summary>
@@ -70,9 +85,17 @@ arduino-cli core install m5stack:esp32 \
   --additional-urls https://static-cdn.m5stack.com/resource/arduino/package_m5stack_index.json
 arduino-cli lib install M5Cardputer M5Unified M5GFX
 
-arduino-cli compile --fqbn m5stack:esp32:m5stack_cardputer .
-arduino-cli upload  --fqbn m5stack:esp32:m5stack_cardputer -p /dev/ttyACM0 .
+FQBN=m5stack:esp32:m5stack_cardputer:PartitionScheme=default_8MB,FlashSize=8M
+arduino-cli compile --fqbn "$FQBN" .
+arduino-cli upload  --fqbn "$FQBN" -p /dev/ttyACM0 .
+
+# the lean build, no radio, fits the default partition
+arduino-cli compile --fqbn m5stack:esp32:m5stack_cardputer \
+  --build-property "compiler.cpp.extra_flags=-DCG_ENABLE_WEB=0" .
 ```
+
+After editing `web/index.html`, regenerate the embedded copy with
+`python3 web/build_assets.py`.
 </details>
 
 ---
@@ -92,6 +115,38 @@ firmware does:
 Held keys auto-repeat. **F1** opens help from anywhere — the global key
 reference in the menu, and a page about the tool itself when one is running.
 **F2** starts and stops CSV logging.
+
+---
+
+## The web interface
+
+Open **Web Interface** on the device, pick *access point* or *join a network*,
+and press Enter. The screen shows the network name, the password and the
+address to open.
+
+It is not a second implementation of the toolbox. The browser drives the same
+state machine the keyboard drives, and sees the device's actual framebuffer
+streamed as changed tiles — so every tool, every dialog and anything added
+later shows up with no web code written for it. Your arrow keys, Esc, Tab,
+Enter, Backspace and F1–F10 map straight through, which means you do not need
+the Fn layer.
+
+On top of that it adds native pages for the things a browser is genuinely
+better at: assigning pins for **every** tool from one table, editing settings,
+naming and loading setups, reading the pinout, and downloading CSV captures.
+
+Two costs, both real:
+
+* **G13 and G15 stop working as analog inputs** while the radio is up — ADC2
+  shares its hardware with WiFi. They are withdrawn from the pin picker and an
+  already-saved assignment turns red on the wiring screen, rather than quietly
+  reading zero. Nothing else is affected.
+* **It needs the 3 MB app partition**, as described above.
+
+There is no access control: anyone who can reach the page can drive every pin,
+exactly as if they had picked the device up. That is a fair match to what a
+bench tool is, but it is worth knowing before leaving autostart on a network
+you share. Full details and the HTTP API are in [docs/WEB.md](docs/WEB.md).
 
 ---
 
@@ -141,6 +196,7 @@ reference in the menu, and a page about the tool itself when one is running.
 | **Board Info** | chip, memory, battery, the full header table and what owns every internal pin |
 | **Saved Setups** | snapshot every tool's pin assignments under a name and recall it — one setup per rig |
 | **Settings** | brightness, key beep, log interval, and the two safety switches |
+| **Web Interface** | access point or join a network; scan, connect, show the address |
 
 ---
 
@@ -162,6 +218,11 @@ it off in Settings if you find it tiresome.
 *and* on the card reader's SPI bus. They stay out of the pin pools until you
 turn on *allow SD pins*, and CSV-to-card logging refuses to mount while a tool
 holds one of them.
+
+**A pin that cannot do its job says so.** The wiring screen shown before every
+tool starts marks an unusable assignment in red with the reason — locked, held
+back for the microSD bus, no ADC on that pin, or ADC2 while the radio is up —
+instead of letting the tool run and report zeros.
 
 **Everything is 3.3 V.** The 5 V pins on the headers are supply rails; the GPIO
 is not 5 V tolerant, and nothing in the firmware can protect you from that.
@@ -200,12 +261,20 @@ src/core/
   Settings.{h,cpp}       NVS preferences and per-tool pin assignments
   Logger.{h,cpp}         CSV to SD and/or serial
   Tool.{h,cpp}           the contract every screen implements
+  Config.h               build switches (CG_ENABLE_WEB)
 src/ui/
   Shell.{h,cpp}          menu, search, arming, help, the frame loop
   PinPicker.{h,cpp}      pin assignment with conflict detection
   WiringGuide.{h,cpp}    list and physical-header views of the wiring
-src/tools/               twenty tools, one pair of files each
+src/net/
+  WebPortal.{h,cpp}      WiFi lifecycle, HTTP routes and the API
+  Mirror.{h,cpp}         framebuffer tile-delta encoder
+  Json.h                 a JSON writer, so there is no dependency for it
+  WebAssets.h            generated: the interface, gzipped into flash
+src/tools/               twenty-one tools, one pair of files each
+web/index.html           the web interface source; build_assets.py embeds it
 docs/HARDWARE.md         the pin map, the quirks, and the sources
+docs/WEB.md              the web interface and its HTTP API
 ```
 
 A tool declares its **roles** — "this one is an output that goes to your
@@ -214,7 +283,8 @@ a wiring diagram, persistence and the arm prompt for free. It implements
 `draw()` and `onKey()`, and optionally `logHeader()` / `logRow()` to gain CSV
 logging. It never touches the keyboard, never pushes the sprite, and never
 calls `M5Cardputer.update()`; the shell owns all of that, which is why the
-frame rate and the navigation are the same everywhere.
+frame rate and the navigation are the same everywhere — and why a new tool
+appears in the web interface without a line of web code.
 
 Adding a tool is one header, one source file, and one `shell.add()` line.
 

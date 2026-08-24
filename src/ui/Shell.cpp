@@ -197,6 +197,47 @@ void Shell::run() {
     }
 }
 
+// ── Remote control ────────────────────────────────────────────────────────
+const char* Shell::stateName() const {
+    switch (_state) {
+        case State::Splash:  return "splash";
+        case State::Menu:    return "menu";
+        case State::Wiring:  return "wiring";
+        case State::Picker:  return "picker";
+        case State::Arm:     return "arm";
+        case State::Running: return "running";
+        case State::Help:    return "help";
+        default:             return "?";
+    }
+}
+
+bool Shell::openToolById(const char* id) {
+    if (!id) return false;
+    for (int i = 0; i < _count; i++) {
+        if (strcmp(_tools[i]->id(), id) != 0) continue;
+        if (_state == State::Running) stopTool();
+        openTool(i);
+        return true;
+    }
+    return false;
+}
+
+void Shell::backToMenu() {
+    if (_state == State::Running) stopTool();
+    else                          toMenu();
+}
+
+bool Shell::startActiveTool() {
+    if (!_active) return false;
+    if (_state == State::Running) return true;
+    if (_active->drivesOutputs() && settings.armOutputs()) {
+        _state = State::Arm;
+        return false;             // the caller must confirm
+    }
+    startTool();
+    return true;
+}
+
 // ── Menu ──────────────────────────────────────────────────────────────────
 void Shell::onMenuKey(const KeyEvent& ev) {
     switch (ev.key) {

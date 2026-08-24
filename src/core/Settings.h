@@ -35,6 +35,28 @@ public:
     bool armOutputs() const { return _armOutputs; }
     void setArmOutputs(bool v);
 
+    // ── WiFi / web interface ──────────────────────────────────────────────
+    // 0 = off, 1 = access point, 2 = join a network. Named NET_* rather than
+    // WIFI_* because the core's WiFiType.h defines those as macros.
+    enum : uint8_t { NET_OFF = 0, NET_AP = 1, NET_STA = 2 };
+
+    uint8_t wifiMode() const { return _wifiMode; }
+    void    setWifiMode(uint8_t v);
+
+    // Credentials for joining a network.
+    const char* wifiSsid() const { return _ssid; }
+    const char* wifiPass() const { return _pass; }
+    void setWifiCreds(const char* ssid, const char* pass);
+
+    // The access point's own password. Generated on first use rather than
+    // derived from the MAC, which anyone in range can read off the SSID.
+    const char* apPass() const { return _apPass; }
+    void setApPass(const char* pass);
+
+    // Start the portal at boot rather than waiting to be asked.
+    bool wifiAuto() const { return _wifiAuto; }
+    void setWifiAuto(bool v);
+
     // ── Per-tool pin assignments ──────────────────────────────────────────
     int  pin(const char* toolId, int role, int fallback) const;
     void setPin(const char* toolId, int role, int gpio);
@@ -47,6 +69,11 @@ private:
     bool    _beep       = true;
     bool    _allowSd    = false;
     bool    _armOutputs = true;
+    uint8_t _wifiMode   = NET_OFF;
+    bool    _wifiAuto   = false;
+    char    _ssid[33]   = {};
+    char    _pass[65]   = {};
+    char    _apPass[17] = {};
 
     void putU8(const char* key, uint8_t v);
     static void keyFor(const char* toolId, int role, char* out, int n);

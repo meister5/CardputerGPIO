@@ -38,6 +38,8 @@ void Keys::begin() {
     _caps  = M5Cardputer.Keyboard.capslocked();
 }
 
+void Keys::inject(const KeyEvent& ev) { push(ev); }
+
 void Keys::flush() {
     _qHead = _qTail = 0;
     _repArmed = false;
