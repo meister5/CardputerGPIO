@@ -191,6 +191,15 @@ let online = false;
 
 async function api(path, opts) {
   const r = await fetch(path, Object.assign({ cache: "no-store" }, opts));
+  if (r.status === 401) {
+    // A 401 answered to fetch() does not reliably raise the browser's own
+    // password box, but one answered to a navigation always does. Reloading
+    // gets the user asked exactly once; every later request then carries the
+    // credentials. This cannot loop: reaching here means the document
+    // request already passed, so the password must have just changed.
+    location.reload();
+    throw new Error("password required");
+  }
   const ct = r.headers.get("content-type") || "";
   const body = ct.includes("json") ? await r.json() : await r.text();
   if (!r.ok) throw new Error((body && body.error) || ("HTTP " + r.status));
@@ -210,6 +219,9 @@ function toast(msg, bad) {
 const fail = e => toast(e.message || String(e), true);
 
 // ── Router ────────────────────────────────────────────────────────────────
+// Must match CG_WEB_USER in src/core/Config.h.
+const WEB_USER = "cardputer";
+
 const PAGES = [
   ["tools",    "Tools",    renderTools],
   ["pins",     "Pins",     renderPins],
@@ -408,7 +420,7 @@ async function renderTools() {
       <div class="tool cat-${cat} ${t.id === cur ? "sel" : ""}" data-id="${t.id}">
         <div class="n">${esc(t.name)}</div>
         <div class="b">${esc(t.blurb)}</div>
-        <div class="c">${t.roles.length ? t.roles.length + " pins" : "no wiring"}${
+        <div class="c">${t.roles.length ? t.roles.length + (t.roles.length === 1 ? " pin" : " pins") : "no wiring"}${
           t.drives ? " · drives outputs" : ""}${t.canLog ? " · logs" : ""}</div>
       </div>`).join("") + "</div>";
   }
@@ -664,7 +676,8 @@ async function renderSetups() {
 async function renderSettings() {
   const s = await api("/api/settings");
   const w = state ? state.wifi
-                  : { mode: 0, ssid: "", staSsid: "", auto: false, status: "off" };
+                  : { mode: 0, ssid: "", staSsid: "", auto: false,
+                      status: "off", locked: false };
 
   $("#main").innerHTML = `
     <div class="card">
@@ -724,6 +737,31 @@ async function renderSettings() {
         <b>ADC2 warning:</b> while the radio is up, G13 and G15 cannot be used
         as analog inputs. Everything else is unaffected.
       </p>
+    </div>
+
+    <div class="card">
+      <h2>Access</h2>
+      <div class="hint" style="margin-bottom:10px">
+        ${w.locked
+          ? `This interface asks for a password. The username is
+             <b>${esc(WEB_USER)}</b>.`
+          : `<b>Anyone who can reach this address can drive the pins.</b>
+             On the board's own access point that is fine — the radio is
+             already WPA2. On a shared network, set a password.`}
+      </div>
+      <label class="row"><span class="k">Web password</span>
+        <input type="password" id="aPass" autocomplete="new-password"
+               placeholder="${w.locked ? "unchanged" : "no password set"}"></label>
+      <div class="flex" style="margin-top:12px">
+        <button class="btn pri" id="aSet">Set password</button>
+        ${w.locked ? `<button class="btn danger" id="aClear">Remove password</button>` : ""}
+      </div>
+      <p class="hint">
+        The browser will ask for it on the next request, and remember it for
+        the rest of the session. It is stored on the device and survives a
+        reboot; a factory reset clears it. Forgetting it costs you a factory
+        reset from the device, not a reflash.
+      </p>
     </div>`;
 
   $("#sSave").onclick = async () => {
@@ -737,6 +775,27 @@ async function renderSettings() {
       });
       toolsCache = null;
       toast("saved");
+    } catch (e) { fail(e); }
+  };
+
+  $("#aSet").onclick = async () => {
+    const v = $("#aPass").value;
+    if (!v) { toast("type a password first"); return; }
+    try {
+      await post("/api/wifi", { webPass: v });
+      toast("password set — reloading so the browser can ask for it");
+      setTimeout(() => location.reload(), 900);
+    } catch (e) { fail(e); }
+  };
+
+  if ($("#aClear")) $("#aClear").onclick = async () => {
+    if (!confirm("Remove the password? Anyone who can reach this address " +
+                 "will be able to drive the pins.")) return;
+    try {
+      await post("/api/wifi", { webPass: "" });
+      toast("password removed");
+      await pollState();     // draw() reads the cached state, so refresh first
+      draw();
     } catch (e) { fail(e); }
   };
 

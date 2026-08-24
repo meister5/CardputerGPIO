@@ -98,6 +98,10 @@ private:
     void hLogControl();
     void hWifiSet();
 
+    // True if this request may proceed. Answers the 401 itself when not,
+    // so a caller only has to check the return value.
+    bool authOk();
+
     void sendJson(const char* body);
     // Refuses to send a response that overran its buffer: half a JSON
     // document parses as nothing useful and is a miserable thing to debug.
