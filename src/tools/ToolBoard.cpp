@@ -126,27 +126,14 @@ void ToolBoard::drawHeader() {
 }
 
 void ToolBoard::drawInternal() {
-    struct Item { const char* what; const char* pins; };
-    static const Item ITEMS[] = {
-        { "display ST7789V2", "G33 34 35 36 37, BL G38" },
-        { "keyboard TCA8418", "I2C 0x34 + INT G11"      },
-        { "IMU / RTC",        "system I2C G8/G9"        },
-        { "audio ES8311",     "G41 43 46, spk G42"      },
-        { "microphone",       "PDM on G46/G43"          },
-        { "IR emitter",       "G44 (no wiring needed)"  },
-        { "microSD",          "CS G12 MOSI G14"         },
-        { "",                 "CLK G40 MISO G39"        },
-        { "battery sense",    "G10"                     },
-        { "Grove port",       "G1 SCL, G2 SDA, 5V"      },
-        { "EXT header",       "14 pins, 5V in and out"  },
-    };
-    const int n = (int)(sizeof(ITEMS) / sizeof(ITEMS[0]));
+    const PeriphInfo* items = periphTable();
+    const int n = periphCount();
     int rows = rowsOnPage() + 1;
     if (_scroll > n - rows) _scroll = n - rows;
     if (_scroll < 0) _scroll = 0;
 
     for (int i = 0; i < rows && (i + _scroll) < n; i++) {
-        const Item& it = ITEMS[i + _scroll];
+        const PeriphInfo& it = items[i + _scroll];
         int y = BODY_Y + 2 + i * 12;
         ui.text(8, y, C_DIM, it.what);
         ui.text(104, y, C_TEXT, it.pins);

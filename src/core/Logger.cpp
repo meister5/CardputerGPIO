@@ -41,6 +41,20 @@ void Logger::unmountSd() {
     _sdMounted = false;
 }
 
+bool Logger::browseBegin() {
+    _err[0] = 0;
+    if (_sdMounted) return true;      // a capture already has it open
+    if (!mountSd()) return false;
+    _browsing = true;
+    return true;
+}
+
+void Logger::browseEnd() {
+    if (!_browsing) return;           // a capture owns the mount, leave it
+    _browsing = false;
+    unmountSd();
+}
+
 bool Logger::start(const char* toolId, const char* header, LogSink sink) {
     stop();
     _err[0] = 0;

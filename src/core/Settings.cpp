@@ -18,8 +18,14 @@ void Settings::begin() {
         _beep       = p.getUChar("beep",      1) != 0;
         _allowSd    = p.getUChar("sdpins",    0) != 0;
         _armOutputs = p.getUChar("armout",    1) != 0;
+        _wifiMode   = p.getUChar("wifimode",  NET_OFF);
+        _wifiAuto   = p.getUChar("wifiauto",  0) != 0;
+        p.getString("wifissid", _ssid, sizeof(_ssid));
+        p.getString("wifipass", _pass, sizeof(_pass));
+        p.getString("appass",   _apPass, sizeof(_apPass));
         p.end();
     }
+    if (_wifiMode > NET_STA) _wifiMode = NET_OFF;
     if (_brightness < 10) _brightness = 10;
     M5Cardputer.Display.setBrightness(_brightness);
 }
@@ -41,6 +47,32 @@ void Settings::setBrightness(uint8_t v) {
 
 void Settings::setBeep(bool v)       { _beep = v;       putU8("beep",   v ? 1 : 0); }
 void Settings::setArmOutputs(bool v) { _armOutputs = v; putU8("armout", v ? 1 : 0); }
+
+void Settings::setWifiMode(uint8_t v) {
+    if (v > NET_STA) v = NET_OFF;
+    _wifiMode = v;
+    putU8("wifimode", v);
+}
+
+void Settings::setWifiAuto(bool v) { _wifiAuto = v; putU8("wifiauto", v ? 1 : 0); }
+
+void Settings::setWifiCreds(const char* ssid, const char* pass) {
+    snprintf(_ssid, sizeof(_ssid), "%s", ssid ? ssid : "");
+    snprintf(_pass, sizeof(_pass), "%s", pass ? pass : "");
+    Preferences p;
+    if (!p.begin(NS_CFG, false)) return;
+    p.putString("wifissid", _ssid);
+    p.putString("wifipass", _pass);
+    p.end();
+}
+
+void Settings::setApPass(const char* pass) {
+    snprintf(_apPass, sizeof(_apPass), "%s", pass ? pass : "");
+    Preferences p;
+    if (!p.begin(NS_CFG, false)) return;
+    p.putString("appass", _apPass);
+    p.end();
+}
 
 void Settings::setAllowSdPins(bool v) {
     _allowSd = v;

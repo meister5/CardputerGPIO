@@ -31,6 +31,18 @@ public:
     bool onKey(const KeyEvent& ev) override;
     const char* const* help(int& n) const override;
 
+    // ── Shared with the web interface ─────────────────────────────────────
+    // The same three actions the on-device screen performs, so a setup saved
+    // from a browser is byte-identical to one saved from the keyboard.
+    void refresh();
+    void save(int slot, const char* name);
+    bool load(int slot);
+    void erase(int slot);
+
+    bool        slotUsed(int i)  const { return valid(i) && _slot[i].used; }
+    const char* slotName(int i)  const { return valid(i) ? _slot[i].name : ""; }
+    int         slotTools(int i) const { return valid(i) ? _slot[i].tools : 0; }
+
 private:
     enum class Mode : uint8_t { List, Naming, ConfirmDelete };
 
@@ -40,16 +52,14 @@ private:
         bool    used  = false;
     };
 
+    static bool valid(int i) { return i >= 0 && i < SLOTS; }
+
     Slot _slot[SLOTS];
     int  _cursor = 0;
     Mode _mode   = Mode::List;
     char _edit[NAMELEN] = {};
     int  _editLen = 0;
 
-    void refresh();
-    void save(int i, const char* name);
-    bool load(int i);
-    void erase(int i);
     static void keyName(int i, char* out, int n);
     static void keyBlob(int i, char* out, int n);
 };

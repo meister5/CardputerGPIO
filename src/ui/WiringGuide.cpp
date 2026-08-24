@@ -1,4 +1,5 @@
 #include "WiringGuide.h"
+#include "../core/Settings.h"
 #include <string.h>
 
 namespace cg {
@@ -31,6 +32,26 @@ int WiringGuide::roleOf(int gpio) const {
     for (int i = 0; i < _tool->roleCount(); i++)
         if (_tool->pin(i) == gpio) return i;
     return -1;
+}
+
+const char* WiringGuide::roleProblem(int i) const {
+    const Role& r = _tool->roles()[i];
+    int gpio = _tool->pin(i);
+
+    if (gpio < 0) return "no pin assigned";
+
+    const PinInfo* p = pinInfo(gpio);
+    if (!p)                     return "not on any header";
+    if (p->flags & PF_LOCKED)   return "system I2C: never available";
+    if ((p->flags & PF_SD) && !settings.allowSdPins())
+                                return "microSD pin: enable in Settings";
+
+    if (r.dir == RoleDir::Adc) {
+        if (!(p->flags & (PF_ADC1 | PF_ADC2))) return "this pin has no ADC";
+        if ((p->flags & PF_ADC2) && !(p->flags & PF_ADC1) && boardRadioActive())
+            return "ADC2 is dead while WiFi is on";
+    }
+    return nullptr;
 }
 
 bool WiringGuide::onKey(const KeyEvent& ev) {
@@ -100,7 +121,9 @@ void WiringGuide::drawList() {
         char lbl[20];
         if (gpio >= 0) pinLabel(gpio, lbl, sizeof(lbl));
         else           snprintf(lbl, sizeof(lbl), "unset");
-        ui.textf(60, y + 4, gpio >= 0 ? C_HIGH : C_WARN, "%-11.11s", lbl);
+        bool bad = roleProblem(i) != nullptr;
+        ui.textf(60, y + 4, gpio < 0 ? C_WARN : (bad ? C_LOW : C_HIGH),
+                 "%-11.11s", lbl);
 
         ui.textf(130, y + 4, C_INFO, "%-18.18s", r.hint);
         y += ROW_H;
@@ -108,13 +131,22 @@ void WiringGuide::drawList() {
 
     ui.scrollbar(SCR_W - 4, BODY_Y + 1, VISIBLE * ROW_H, _scroll, VISIBLE, rc);
 
-    // Surface the first real warning rather than making the user hunt.
+    // Surface the first real problem rather than making the user hunt. A pin
+    // that cannot work outranks one that merely has a caveat.
+    for (int i = 0; i < rc; i++) {
+        const char* w = roleProblem(i);
+        if (w) {
+            ui.textf(6, BODY_Y + VISIBLE * ROW_H + 3, C_LOW,
+                     "x %.8s: %.26s", _tool->roles()[i].label, w);
+            return;
+        }
+    }
     for (int i = 0; i < rc; i++) {
         const char* w = pinWarn(_tool->pin(i));
         if (w) {
             ui.textf(6, BODY_Y + VISIBLE * ROW_H + 3, C_WARN,
                      "! %.8s: %.26s", _tool->roles()[i].label, w);
-            break;
+            return;
         }
     }
 }

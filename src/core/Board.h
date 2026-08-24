@@ -32,7 +32,7 @@ enum PinFlag : uint16_t {
     PF_NONE     = 0,
     PF_FREE     = 1 << 0,   // no onboard peripheral contends for this pin
     PF_ADC1     = 1 << 1,   // ADC1 — always available
-    PF_ADC2     = 1 << 2,   // ADC2 — usable here because we never start WiFi
+    PF_ADC2     = 1 << 2,   // ADC2 — shares its hardware with the WiFi radio
     PF_GROVE    = 1 << 3,   // on the HY2.0-4P Grove port
     PF_EXT      = 1 << 4,   // on the EXT 2.54-14P header
     PF_SD       = 1 << 5,   // shared with the microSD SPI bus
@@ -60,12 +60,27 @@ constexpr int PIN_SD_MISO   = 39;
 constexpr int PIN_SD_CLK    = 40;
 constexpr int PIN_BAT_ADC   = 10;
 
+// What owns the pins you cannot have. One table, so the on-device board
+// screen and the web interface can never drift apart.
+struct PeriphInfo {
+    const char* what;
+    const char* pins;
+};
+int               periphCount();
+const PeriphInfo* periphTable();
+
 // Well-known addresses on the system I2C bus, so the scanner can name them.
 const char* i2cKnownName(uint8_t addr);
 
 void        boardBegin();
 bool        boardIsAdv();
 const char* boardName();
+
+// ADC2 (G11-G20) shares its hardware with the WiFi radio. While the radio is
+// up those pins cannot be read, so the web layer tells Board when it starts
+// and stops and the ADC pool shrinks accordingly.
+void boardSetRadioActive(bool on);
+bool boardRadioActive();
 
 int             pinCount();
 const PinInfo*  pinTable();

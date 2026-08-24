@@ -27,6 +27,12 @@ public:
     void clear(uint16_t col = C_BG);
     void push();                       // blit the frame
 
+    // Raw RGB565 frame, row-major, SCR_W * SCR_H, or nullptr when the sprite
+    // could not be allocated and we are drawing on the panel directly.
+    const uint16_t* frame() const {
+        return _sprite ? (const uint16_t*)_canvas.getBuffer() : nullptr;
+    }
+
     // ── Chrome ────────────────────────────────────────────────────────────
     // Draws the title bar and returns the first free body row.
     int  header(const char* title, const char* right = nullptr,

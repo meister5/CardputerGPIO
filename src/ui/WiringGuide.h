@@ -35,6 +35,11 @@ private:
 
     // Role index assigned to this GPIO, or -1.
     int  roleOf(int gpio) const;
+
+    // Why this role's pin will not work, or nullptr when it is fine. The
+    // answer changes with the radio and the SD opt-in, so it is worked out
+    // fresh each frame rather than cached at assignment time.
+    const char* roleProblem(int role) const;
 };
 
 }  // namespace cg

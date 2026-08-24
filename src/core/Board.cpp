@@ -29,6 +29,7 @@ static const PinInfo TABLE[] = {
 static constexpr int TABLE_N = (int)(sizeof(TABLE) / sizeof(TABLE[0]));
 
 static bool s_isAdv = false;
+static bool s_radio = false;
 
 // ── Pools ─────────────────────────────────────────────────────────────────
 static int8_t s_gpioPool[TABLE_N];
@@ -42,6 +43,14 @@ void boardBegin() {
 }
 
 bool boardIsAdv() { return s_isAdv; }
+
+void boardSetRadioActive(bool on) {
+    if (s_radio == on) return;
+    s_radio = on;
+    poolsRebuild();      // ADC2 pins come and go with the radio
+}
+
+bool boardRadioActive() { return s_radio; }
 
 const char* boardName() {
     return s_isAdv ? "Cardputer ADV" : "UNSUPPORTED BOARD";
@@ -70,6 +79,10 @@ bool pinAdcOk(int gpio) {
     const PinInfo* p = pinInfo(gpio);
     if (!p) return false;
     if (!(p->flags & (PF_ADC1 | PF_ADC2))) return false;
+    // ADC2 is wired to the same hardware the WiFi radio uses. With the web
+    // interface running, a read here returns nothing meaningful, so the pin
+    // is withdrawn rather than quietly reporting rubbish.
+    if ((p->flags & PF_ADC2) && !(p->flags & PF_ADC1) && s_radio) return false;
     return pinGpioOk(gpio);
 }
 
@@ -96,6 +109,24 @@ void poolsRebuild() {
 
 const int8_t* poolGpio(int& n) { n = s_gpioPoolN; return s_gpioPool; }
 const int8_t* poolAdc (int& n) { n = s_adcPoolN;  return s_adcPool;  }
+
+// ── Internal peripherals ──────────────────────────────────────────────────
+static const PeriphInfo PERIPH[] = {
+    { "display ST7789V2", "G33 34 35 36 37, BL G38" },
+    { "keyboard TCA8418", "I2C 0x34 + INT G11"      },
+    { "IMU / RTC",        "system I2C G8/G9"        },
+    { "audio ES8311",     "G41 43 46, spk G42"      },
+    { "microphone",       "PDM on G46/G43"          },
+    { "IR emitter",       "G44 (no wiring needed)"  },
+    { "microSD",          "CS G12 MOSI G14"         },
+    { "",                 "CLK G40 MISO G39"        },
+    { "battery sense",    "G10"                     },
+    { "Grove port",       "G1 SCL, G2 SDA, 5V"      },
+    { "EXT header",       "14 pins, 5V in and out"  },
+};
+
+int               periphCount() { return (int)(sizeof(PERIPH) / sizeof(PERIPH[0])); }
+const PeriphInfo* periphTable() { return PERIPH; }
 
 // ── I2C address hints ─────────────────────────────────────────────────────
 // Enough to make a scan self-explanatory. The three ADV system devices are
