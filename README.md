@@ -94,9 +94,46 @@ arduino-cli compile --fqbn m5stack:esp32:m5stack_cardputer \
   --build-property "compiler.cpp.extra_flags=-DCG_ENABLE_WEB=0" .
 ```
 
+Or build both release binaries at once:
+
+```bash
+tools/package.sh
+```
+
+`tools/package.sh` writes:
+
+| File | Use |
+|---|---|
+| `dist/CardputerGPIO-app.bin` | **M5Launcher** — copy to SD, or upload via WebUI/OTA |
+| `dist/CardputerGPIO-merged.bin` | **M5Burner** custom firmware, or `esptool` at offset `0x0` |
+
 After editing `web/index.html`, regenerate the embedded copy with
 `python3 web/build_assets.py`.
 </details>
+
+### 5. Or install it with M5Launcher
+
+[M5Launcher](https://github.com/bmorcelli/Launcher) keeps several firmwares on
+one device and boots whichever you pick, so you do not have to reflash to swap
+between them. It installs application binaries into an OTA app partition, which
+means the **app** binary is the one to hand it — not the merged image:
+
+1. Copy `CardputerGPIO-app.bin` to a FAT32 SD card (MBR, 32 GB or less).
+2. In Launcher, open `SD`, select the file, choose `Install`.
+
+It also works through `WUI` (browser upload) or as an `OTA > Favorites` entry
+pointing at a release asset URL. The web build is about 1.38 MB, well inside a
+standard OTA slot, and `tools/package.sh` fails rather than emit an image that
+has outgrown one.
+
+Nothing here needs a filesystem partition: settings live in NVS and the SD card
+is accessed directly, so there is no SPIFFS image for Launcher to install
+alongside the app and nothing to lose when you switch firmware. The firmware
+never writes the OTA boot partition either, so it cannot brick a Launcher
+install — return to Launcher the way Launcher documents for your device.
+
+The partition scheme above applies to a **direct** flash over USB. Under
+Launcher the layout is Launcher's, and it sizes the OTA slot itself.
 
 ---
 
