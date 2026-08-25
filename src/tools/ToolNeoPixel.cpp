@@ -265,7 +265,7 @@ void ToolNeoPixel::draw() {
     ui.textf(8, BODY_B - 9, mA > 500 ? C_WARN : C_FAINT,
              "%s  ~%lu mA", _grb ? "GRB" : "RGB", (unsigned long)mA);
 
-    ui.footer("[^v] item [<>] change [G] order [SPC] off");
+    ui.footer("[^v]item [<>]change [SPC]off");
 }
 
 }  // namespace cg

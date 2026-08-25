@@ -233,7 +233,7 @@ void ToolIC::draw() {
     ui.textf(6, BODY_B - 9, C_FAINT, "sense %s  dwell %lums",
              readName(_read), (unsigned long)_dwellMs);
 
-    ui.footer("[<>] addr [S] scan [E] en [R] sense [P] part");
+    ui.footer("[<>]addr [S]scan [E]en [R]read");
 }
 
 const char* ToolIC::logHeader() const { return "channel,value,mode"; }

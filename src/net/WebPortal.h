@@ -62,6 +62,13 @@ public:
     uint32_t requests() const { return _requests; }
     uint32_t lastRequestMs() const { return _lastReq; }
 
+    // A browser is polling the framebuffer right now. The shell uses this to
+    // decide whether composing a frame is worth the cycles once the panel has
+    // gone dark: with nobody watching, an idle Cardputer stops drawing too.
+    bool mirrorLive() const {
+        return _running && _lastReq != 0 && (millis() - _lastReq) < 3000;
+    }
+
 private:
     WebServer _server{80};
     bool      _running  = false;

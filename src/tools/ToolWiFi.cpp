@@ -303,10 +303,10 @@ void ToolWiFi::draw() {
     }
 
     switch (_view) {
-        case View::Pick:     ui.footer("[^v] pick  [ENT] use  [Fn+`] back"); break;
-        case View::Password: ui.footer("type the password, then [ENT]");     break;
-        case View::Scanning: ui.footer("[Fn+`] cancel");                     break;
-        default:             ui.footer("[<>] mode [ENT] apply [S] scan [A] boot");
+        case View::Pick:     ui.footer("[^v] pick  [ENT] use");            break;
+        case View::Password: ui.footer("password + [ENT]   [Fn+`] cancel"); break;
+        case View::Scanning: ui.footer("scanning...");                     break;
+        default:             ui.footer("[<>]mode [ENT]apply [S]scan");
     }
 }
 

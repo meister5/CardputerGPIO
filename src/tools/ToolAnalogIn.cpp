@@ -121,7 +121,7 @@ void ToolAnalogIn::draw() {
         y += 25;
     }
 
-    ui.footerf("[R] reset [H] hold [O] avg x%u [S] scale", _osr);
+    ui.footerf("[R]rst [H]hold [O]avg%u [S]scale", _osr);
 }
 
 

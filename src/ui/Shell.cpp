@@ -1,6 +1,10 @@
 #include "Shell.h"
+#include "../core/Config.h"
 #include "../core/Settings.h"
 #include "../core/Logger.h"
+#if CG_ENABLE_WEB
+#include "../net/WebPortal.h"
+#endif
 #include <string.h>
 #include <ctype.h>
 
@@ -14,21 +18,24 @@ static constexpr uint32_t FRAME_MS = 33;   // ~30 fps
 
 // ── Global key reference, shown on F1 from anywhere ───────────────────────
 static const char* HELP_LINES[] = {
-    "This keyboard has no arrow or ESC keys.",
-    "They live on the Fn layer, as printed",
-    "on the keycaps:",
+    "This keyboard has no arrow keys, so the",
+    "four keys with arrows on the caps are",
+    "the arrows -- no Fn needed:",
     "",
-    "  Fn + ;   up          Fn + ,   left",
-    "  Fn + .   down        Fn + /   right",
-    "  Fn + `   ESC         Fn + 1-0 F1-F10",
-    "  Fn + Aa  caps lock   DEL      back",
+    "   ;  up      .  down    ,  left",
+    "   /  right   `  back    DEL  back",
     "",
-    "F1 opens help. F2 starts/stops CSV",
-    "logging in tools that measure.",
+    "Fn + ; . , / still works. Fn + ` is ESC,",
+    "Fn + 1-0 is F1-F10, Fn + Aa is caps lock.",
     "Held keys auto-repeat.",
     "",
-    "In the menu: type to search, Fn+,/ to",
-    "filter by category, digits to jump.",
+    "Where text is typed -- a WiFi password, a",
+    "UART line, a setup name -- ; . , / and `",
+    "type themselves again and the footer",
+    "stops offering [`] back.",
+    "",
+    "F1 is help. F2 logs CSV where there are",
+    "numbers to log.",
 };
 static constexpr int HELP_N = (int)(sizeof(HELP_LINES) / sizeof(HELP_LINES[0]));
 
@@ -104,7 +111,18 @@ void Shell::run() {
     }
 
     KeyEvent ev;
+    bool woke = false;
     while (keys.next(ev)) {
+        // A press on a dark screen only brings it back. Anything else would
+        // mean fishing the Cardputer out of a bag and arming a tool by
+        // accident. Injected keys are not affected: the browser is a screen of
+        // its own and is never the thing that needed waking.
+        if (ev.phys && (woke || !ui.displayAwake())) {
+            woke = true;
+            ui.wakeDisplay();
+            continue;
+        }
+
         // F1 is help everywhere except inside help itself.
         if (ev.key == Key::Fkey && ev.num == 1 && _state != State::Help) {
             _helpReturn = _state;
@@ -176,9 +194,19 @@ void Shell::run() {
         }
     }
 
+    // Whether the cursor keys are cursor keys is decided here, once, from
+    // what is actually on screen.
+    keys.setTextInput(_state == State::Running && _active && _active->textEntry());
+
+    ui.idleTick();
+
     uint32_t now = millis();
     if ((uint32_t)(now - _lastFrame) < FRAME_MS) return;
     _lastFrame = now;
+
+    // Panel dark and no browser reading the mirror: there is nobody to draw
+    // for. Measurement, outputs and logging all happen above this line.
+    if (!ui.displayAwake() && !mirrorWatched()) return;
 
     switch (_state) {
         case State::Menu:    drawMenu();      break;
@@ -191,10 +219,31 @@ void Shell::run() {
             _active->draw();
             drawLogBadge();
             ui.drawNotification();
-            ui.push();
             break;
-        default: break;
+        default:
+            return;                 // nothing composed: nothing to blit
     }
+
+    // Every screen is composed by the case above and blitted exactly once
+    // here, so the badge is always the last thing painted into the frame.
+    ui.footerBadge(globalHint());
+    ui.push();
+}
+
+// The one hint that is true on every screen, kept honest: in a text field the
+// backtick types a backtick, so the offer is withdrawn rather than lying.
+const char* Shell::globalHint() const {
+    if (keys.textInput())     return nullptr;
+    if (_state == State::Menu) return "F1 help";
+    return "` back";
+}
+
+bool Shell::mirrorWatched() const {
+#if CG_ENABLE_WEB
+    return portal.mirrorLive();
+#else
+    return false;
+#endif
 }
 
 // ── Remote control ────────────────────────────────────────────────────────
@@ -334,13 +383,12 @@ void Shell::drawMenu() {
 
     ui.scrollbar(SCR_W - 4, BODY_Y + 1, VISIBLE * ROW_H, _scroll, VISIBLE, _viewN);
 
-    if (_searchLen > 0)      ui.footerf("search: %s_   [DEL] erase  [Fn+`] clear", _search);
-    else if (_catFilter >= 0) ui.footerf("cat: %s   [<>] change  [F1] help",
+    if (_searchLen > 0)      ui.footerf("find: %s_  [DEL] erase", _search);
+    else if (_catFilter >= 0) ui.footerf("cat: %s  [<>] change",
                                          catName((Cat)_catFilter));
-    else                      ui.footer("[^v] pick  [ENT] open  type to search  [F1] help");
+    else                      ui.footer("[^v] pick [ENT] open  type=find");
 
     ui.drawNotification();
-    ui.push();
 }
 
 // ── Splash ────────────────────────────────────────────────────────────────
@@ -382,8 +430,7 @@ void Shell::drawArm() {
     if (shown == 0) ui.text(14, y, C_WARN, "(pins assigned at run time)");
 
     ui.text(8, BODY_B - 12, C_DIM, "Check your wiring before arming.");
-    ui.footer("[ENT] arm   [DEL] cancel   [O] disable prompt");
-    ui.push();
+    ui.footer("[ENT] arm   [O] stop asking");
 }
 
 void Shell::onArmKey(const KeyEvent& ev) {
@@ -421,7 +468,6 @@ void Shell::drawHelp() {
         y += 9;
     }
     ui.footer("any key to close");
-    ui.push();
 }
 
 // ── Transitions ───────────────────────────────────────────────────────────

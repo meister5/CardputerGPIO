@@ -58,8 +58,15 @@ browser with no web code written for it.
 
 **Keys are injected, not interpreted.** The browser posts a key event and
 `Keys::inject()` puts it in the same queue the physical keyboard feeds. Your
-arrow keys, Esc, Tab, Enter, Backspace and F1–F10 map straight through, so you
-do not need the device's Fn layer.
+arrow keys, Esc, Tab, Enter, Backspace and F1–F10 map straight through, so a
+full-size keyboard drives the device as a full-size keyboard.
+
+Injected events carry `phys = false`, which has two consequences. They never
+reset the display's idle timer — a session spent in the browser lets the panel go
+dark, which is the point — and they are not swallowed by a dark screen the way
+the first press on the case is: the browser is a screen of its own and is never
+the thing that needs waking. The device keeps composing frames for as long as the
+mirror is being polled.
 
 **Live values reuse the CSV hooks.** Any tool that implements `logHeader()` and
 `logRow()` for logging gets a live readout in the browser for free, with columns

@@ -68,6 +68,12 @@ public:
 
     virtual const char* hints() const { return "[DEL] back"; }
 
+    // True while the tool has a text field open. The shell hands ; . , / and
+    // ` back to the character layer for as long as it is -- see Keys.h. A
+    // tool answers from its own state rather than switching the mode itself,
+    // so there is no way to leave the cursor keys dead on the way out.
+    virtual bool textEntry() const { return false; }
+
     // Optional per-tool help page, shown on F1.
     virtual const char* const* help(int& n) const { n = 0; return nullptr; }
 

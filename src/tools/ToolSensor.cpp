@@ -253,7 +253,7 @@ void ToolSensor::draw() {
         ui.text(8, BODY_Y + 58, C_DIM, "and that VCC/GND are connected.");
     }
 
-    ui.footerf("[S] type  [U] C/F  [R] read   ok %lu/%lu",
+    ui.footerf("[S]type [U]C/F [R]read  %lu/%lu",
                (unsigned long)(_reads - _fails), (unsigned long)_reads);
 }
 

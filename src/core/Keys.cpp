@@ -36,6 +36,7 @@ void Keys::begin() {
     flush();
     _prevN = _curN = 0;
     _caps  = M5Cardputer.Keyboard.capslocked();
+    _lastPhys = millis();
 }
 
 void Keys::inject(const KeyEvent& ev) { push(ev); }
@@ -84,6 +85,7 @@ void Keys::emitCode(uint16_t code, bool repeat) {
     ev.alt    = _mAlt;
     ev.opt    = _mOpt;
     ev.repeat = repeat;
+    ev.phys   = true;      // emitCode() is only ever reached from update()
 
     switch (code & 0xFF00) {
         case LC_CHAR: {
@@ -159,6 +161,27 @@ void Keys::update() {
         if (st.tab)   add(codeSpec(Key::Tab));
         for (char c : st.word) {
             if (c == 0) continue;
+            // The four keys that carry an arrow on the keycap navigate
+            // without Fn, and the top-left key goes back.
+            //
+            // Shift is what opts out -- Shift+; is ':', and that is how those
+            // five characters are typed on a screen that is not a text field.
+            // Held Shift is also the only reliable way to tell the case
+            // apart, because the library hands out value_second whenever
+            // *any* of ctrl, shift or caps lock is set: with caps on, ';'
+            // arrives as ':' with nothing else to distinguish it. Hence
+            // unshift() here, and hence Ctrl being excluded outright -- a
+            // Ctrl combination is a shortcut, not a cursor move.
+            if (!_textInput && !_mShift && !_mCtrl) {
+                switch (unshift(c)) {
+                    case ';': add(codeSpec(Key::Up));    continue;
+                    case '.': add(codeSpec(Key::Down));  continue;
+                    case ',': add(codeSpec(Key::Left));  continue;
+                    case '/': add(codeSpec(Key::Right)); continue;
+                    case '`': add(codeSpec(Key::Back));  continue;
+                    default:  break;
+                }
+            }
             add(codeChar(c));
         }
     }
@@ -173,6 +196,11 @@ void Keys::update() {
     }
 
     uint32_t now = millis();
+
+    // Anything held down is a sign someone is looking at the screen; the idle
+    // timeout is measured from here. Held counts as well as pressed, so a key
+    // leant on for a minute does not let the display go dark under the thumb.
+    if (_curN > 0) _lastPhys = now;
 
     if (newest && repeatable(newest)) {
         _repCode  = newest;

@@ -100,7 +100,7 @@ void ToolFreq::draw() {
     if (!_ok) {
         ui.text(8, BODY_Y + 30, C_LOW, "Could not claim a PCNT unit.");
         ui.text(8, BODY_Y + 44, C_DIM, "Close another counting tool first.");
-        ui.footer("[DEL] back");
+        ui.footer("");
         return;
     }
 

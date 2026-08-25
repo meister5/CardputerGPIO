@@ -206,7 +206,7 @@ void ToolI2C::drawScan() {
     }
 
     ui.scrollbar(SCR_W - 4, BODY_Y + 14, visible * ROW_H, top, visible, _n);
-    ui.footerf("%d found  [ENT] open  [S] scan  [B] bus", _n);
+    ui.footerf("%d dev [ENT]open [S]scan [B]bus", _n);
 }
 
 void ToolI2C::drawRegs() {
@@ -240,7 +240,7 @@ void ToolI2C::drawRegs() {
         ui.textf(130 + (7 - b) * 7, BODY_B - 9,
                  ((v >> b) & 1) ? C_HIGH : C_FAINT, "%d", (v >> b) & 1);
 
-    ui.footer("[^v<>] move  [W] write  [R] re-read  [DEL] list");
+    ui.footer("[^v<>] move [W] write [R] read");
 }
 
 void ToolI2C::drawWrite() {

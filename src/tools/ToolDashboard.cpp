@@ -147,7 +147,7 @@ void ToolDashboard::draw() {
     }
 
     ui.scrollbar(SCR_W - 4, BODY_Y + 1, VISIBLE * ROW_H, _scroll, VISIBLE, _n);
-    ui.footer("[M] mode [SPC] toggle [A/Z] all [R] reset");
+    ui.footer("[M]mode [SPC]tog [A/Z]all [R]rst");
 }
 
 }  // namespace cg

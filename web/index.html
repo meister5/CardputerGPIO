@@ -169,8 +169,10 @@ canvas{image-rendering:pixelated;width:480px;max-width:100%;height:auto;
 
       <p class="hint">
         Click the screen (or the ⌨ button) to capture your keyboard: arrows,
-        Esc, Tab, Enter, Backspace and F1–F10 all map straight through, so you
-        do not need the device's Fn layer. Press <b>Esc</b> twice to release.
+        Esc, Tab, Enter, Backspace and F1–F10 all map straight through. Press
+        <b>Esc</b> twice to release. Typing here never wakes the device's own
+        screen — it powers down while you work in the browser, and keeps
+        sending this one.
       </p>
     </div>
   </aside>
@@ -684,6 +686,13 @@ async function renderSettings() {
       <h2>Device</h2>
       <label class="row"><span class="k">Brightness</span>
         <input type="number" id="sBright" min="10" max="255" value="${s.brightness}" style="width:90px"></label>
+      <label class="row"><span class="k">Screen off after</span>
+        <select id="sOff">${
+          [[0, "never"], [15, "15 s"], [30, "30 s"], [60, "1 min"],
+           [120, "2 min"], [300, "5 min"]].map(([v, t]) =>
+            `<option value="${v}" ${s.screenOff === v ? "selected" : ""}>${t}</option>`
+          ).join("")
+        }</select></label>
       <label class="row"><span class="k">Key beep</span>
         <input type="checkbox" id="sBeep" ${s.beep ? "checked" : ""}></label>
       <label class="row"><span class="k">Arm before driving outputs</span>
@@ -695,6 +704,10 @@ async function renderSettings() {
       <div class="flex" style="margin-top:12px">
         <button class="btn pri" id="sSave">Save</button>
       </div>
+      <p class="hint">The device's backlight is its biggest single drain, so the
+      panel powers down once <b>screen off after</b> elapses with nothing pressed
+      on the case. Working here does not count as activity — that is the point —
+      and the mirror above keeps updating either way.</p>
       <p class="hint">Turning off <b>arm before driving outputs</b> lets a tool
       start sourcing current the moment it opens, using pins you may have
       assigned weeks ago. Leave it on unless you know what is wired.</p>
@@ -768,6 +781,7 @@ async function renderSettings() {
     try {
       await post("/api/settings", {
         brightness: $("#sBright").value,
+        screenOff: $("#sOff").value,
         beep: $("#sBeep").checked ? 1 : 0,
         armOutputs: $("#sArm").checked ? 1 : 0,
         allowSdPins: $("#sSd").checked ? 1 : 0,

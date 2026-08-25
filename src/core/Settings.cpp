@@ -16,6 +16,7 @@ void Settings::begin() {
     if (p.begin(NS_CFG, true)) {
         _brightness = p.getUChar("bright",  110);
         _beep       = p.getUChar("beep",      1) != 0;
+        _screenOff  = p.getUShort("scroff",  30);
         _allowSd    = p.getUChar("sdpins",    0) != 0;
         _armOutputs = p.getUChar("armout",    1) != 0;
         _wifiMode   = p.getUChar("wifimode",  NET_OFF);
@@ -44,6 +45,18 @@ void Settings::setBrightness(uint8_t v) {
     _brightness = v;
     M5Cardputer.Display.setBrightness(v);
     putU8("bright", v);
+}
+
+void Settings::putU16(const char* key, uint16_t v) {
+    Preferences p;
+    if (!p.begin(NS_CFG, false)) return;
+    p.putUShort(key, v);
+    p.end();
+}
+
+void Settings::setScreenOff(uint16_t secs) {
+    _screenOff = secs;
+    putU16("scroff", secs);
 }
 
 void Settings::setBeep(bool v)       { _beep = v;       putU8("beep",   v ? 1 : 0); }
@@ -134,6 +147,7 @@ void Settings::factoryReset() {
     if (p.begin(NS_PINS, false)) { p.clear(); p.end(); }
     if (p.begin(NS_CFG,  false)) { p.clear(); p.end(); }
     _brightness = 110;
+    _screenOff  = 30;
     _beep       = true;
     _allowSd    = false;
     _armOutputs = true;

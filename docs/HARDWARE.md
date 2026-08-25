@@ -126,18 +126,50 @@ single-meaning events:
 
 | Key       | Combination |
 | --------- | ----------- |
-| Up        | `Fn` + `;`  |
-| Down      | `Fn` + `.`  |
-| Left      | `Fn` + `,`  |
-| Right     | `Fn` + `/`  |
+| Up        | `;` — or `Fn` + `;` |
+| Down      | `.` — or `Fn` + `.` |
+| Left      | `,` — or `Fn` + `,` |
+| Right     | `/` — or `Fn` + `/` |
+| Back      | `` ` `` — or `Backspace` |
 | Esc       | `` Fn + ` `` |
 | F1–F10    | `Fn` + `1`–`0` |
 | Caps lock | `Fn` + `Aa` (toggles; the hardware key is momentary) |
 | Forward delete | `Fn` + `Backspace` |
-| Back      | `Backspace` |
 
 Auto-repeat is synthesised at 380 ms delay / 55 ms rate, for navigation keys and
 printable characters only.
+
+### The bare arrow layer
+
+Holding `Fn` for every cursor move is miserable on a thumb keyboard, so the four
+keys that carry an arrow on the keycap *are* the arrows, and the top-left key
+goes back. That costs five characters, which are handed back the moment a screen
+actually reads text: `Tool::textEntry()` says so, `Shell::run()` is the single
+place that acts on it, and `Keys::setTextInput()` flips the mapping for exactly
+as long as the field is open. The WiFi password view, the UART terminal and the
+setup-name editor are the three screens that claim it today.
+
+Two escape hatches survive everywhere: `Fn` + the same key still produces the
+arrow, and `Shift` + the key still produces the character (`Shift+;` is `:`),
+because only the unshifted glyph is intercepted.
+
+## Display power
+
+The backlight is the largest single draw on the board, so the panel powers down
+after `Settings::screenOff()` seconds with nothing pressed — 30 s by default,
+adjustable from `off` to 5 min in the Settings tool. Only the keyboard on the
+case counts as activity: `Keys::lastActivity()` ignores events pushed in by
+`Keys::inject()`, because driving the board from a browser is precisely when the
+screen is wasted power.
+
+Nothing else stops. Outputs stay driven, `tick()` still runs, a CSV capture keeps
+logging, and the frame is still composed into the sprite so the web mirror serves
+exactly what the panel would have shown — `UI::push()` simply does not blit it.
+The one further saving: with the panel dark *and* no browser polling the mirror
+(`WebPortal::mirrorLive()`), the shell skips composing the frame at all.
+
+The first key press on a dark screen only wakes it. Anything else would mean
+arming a tool by fishing the Cardputer out of a bag.
 
 Newer, unreleased M5Cardputer revisions resolve the Fn layer inside the library
 via a third keymap column (`value_third`, plus `esc` and `f1`..`f10` members).

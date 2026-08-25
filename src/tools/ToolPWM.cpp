@@ -207,7 +207,7 @@ void ToolPWM::draw() {
     char plbl[20];
     pinLabel(pin(0), plbl, sizeof(plbl));
     ui.textf(6, BODY_B - 9, C_FAINT, "on %s", plbl);
-    ui.footer("[SPC] on/off [<>] freq [F] preset [^v] duty");
+    ui.footer("[SPC]on/off [<>]freq [^v]duty");
 }
 
 }  // namespace cg

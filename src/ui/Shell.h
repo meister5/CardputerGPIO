@@ -75,6 +75,14 @@ private:
     void toggleLogging();
     void drawHelp();
 
+    // The footer's right-hand corner: the key that means the same thing on
+    // every screen, or nothing at all where it would not be true.
+    const char* globalHint() const;
+
+    // A browser is polling the framebuffer, so frames are worth composing
+    // even with the panel dark.
+    bool mirrorWatched() const;
+
     void onMenuKey(const KeyEvent& ev);
     void onArmKey(const KeyEvent& ev);
 

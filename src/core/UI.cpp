@@ -1,4 +1,5 @@
 #include "UI.h"
+#include "Keys.h"
 #include "Settings.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -35,7 +36,34 @@ void UI::clear(uint16_t col) {
 }
 
 void UI::push() {
+    // The frame is still composed while the panel is off -- the web mirror
+    // reads the sprite, not the display -- it just does not reach the glass.
+    if (!_awake) return;
     if (_sprite) _canvas.pushSprite(0, 0);
+}
+
+// ── Display power ─────────────────────────────────────────────────────────
+void UI::wakeDisplay() {
+    if (_awake) return;
+    _awake = true;
+    auto& disp = M5Cardputer.Display;
+    disp.wakeup();
+    disp.setBrightness(settings.brightness());
+    // The panel lost its contents while it slept; the next push() repaints
+    // the whole sprite, which is within one frame of here.
+}
+
+void UI::idleTick() {
+    uint16_t secs = settings.screenOff();
+    if (secs == 0) { wakeDisplay(); return; }   // timeout turned off: stay lit
+    if (!_awake) return;
+
+    if ((uint32_t)(millis() - keys.lastActivity()) < (uint32_t)secs * 1000UL) return;
+
+    _awake = false;
+    auto& disp = M5Cardputer.Display;
+    disp.setBrightness(0);      // the backlight is what actually costs power
+    disp.sleep();               // and this drops the panel's own draw
 }
 
 // ── Text ──────────────────────────────────────────────────────────────────
@@ -93,6 +121,15 @@ void UI::footer(const char* hints) {
     _g->fillRect(0, SCR_H - FTR_H, SCR_W, FTR_H, C_FTR);
     _g->drawFastHLine(0, SCR_H - FTR_H - 1, SCR_W, C_LINE);
     text(3, SCR_H - FTR_H + 2, C_DIM, hints);
+}
+
+// Painted after the screen's own footer, so it wins the corner. The screen's
+// text is clipped by the fill rather than overlapping it.
+void UI::footerBadge(const char* s) {
+    if (!s || !*s) return;
+    int w = (int)strlen(s) * CH_W + 5;
+    _g->fillRect(SCR_W - w, SCR_H - FTR_H, w, FTR_H, C_FTR);
+    text(SCR_W - w + 3, SCR_H - FTR_H + 2, C_FAINT, s);
 }
 
 void UI::footerf(const char* fmt, ...) {

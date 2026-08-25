@@ -28,6 +28,8 @@ public:
     const char* blurb() const override { return "browser control over WiFi"; }
     Cat         cat()   const override { return Cat::System; }
 
+    bool textEntry() const override { return _view == View::Password; }
+
     void onEnter() override;
     void onExit()  override;
     void tick()    override;

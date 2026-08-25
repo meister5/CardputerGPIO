@@ -27,6 +27,16 @@ public:
     void clear(uint16_t col = C_BG);
     void push();                       // blit the frame
 
+    // ── Display power ─────────────────────────────────────────────────────
+    // The backlight is the largest single draw on this board, so an idle
+    // Cardputer turns its panel off. Everything else keeps running: a PWM
+    // output stays up, a capture keeps logging, and the web mirror keeps
+    // serving the same frames it would have shown -- the screen is dark, the
+    // firmware is not asleep.
+    void idleTick();                   // called once a frame by the shell
+    void wakeDisplay();                // panel back on; the timer lives in Keys
+    bool displayAwake() const { return _awake; }
+
     // Raw RGB565 frame, row-major, SCR_W * SCR_H, or nullptr when the sprite
     // could not be allocated and we are drawing on the panel directly.
     const uint16_t* frame() const {
@@ -63,6 +73,11 @@ public:
     // Full-width selectable row, used by every list screen.
     void listRow(int y, int h, bool selected, uint16_t accent = C_CURSOR);
 
+    // Right-hand corner of the footer, painted over whatever the screen drew
+    // there. The shell uses it for the keys that mean the same thing
+    // everywhere, so no tool has to spend its own footer saying "back".
+    void footerBadge(const char* s);
+
     // Transient banner, drawn over whatever is already in the frame.
     void toast(const char* msg, uint16_t col = C_INFO);
 
@@ -82,6 +97,8 @@ private:
 
     char     _note[48] = {};
     uint32_t _noteUntil = 0;
+
+    bool     _awake = true;
 };
 
 extern UI ui;

@@ -135,7 +135,7 @@ void ToolSPI::draw() {
         ui.text(8, BODY_Y + 20, C_LOW, "Pins not assigned.");
         ui.text(8, BODY_Y + 34, C_DIM, "Press DEL, then C on the wiring");
         ui.text(8, BODY_Y + 44, C_DIM, "screen to pick SCK/MOSI/MISO/CS.");
-        ui.footer("[DEL] back");
+        ui.footer("");
         return;
     }
 
@@ -179,7 +179,7 @@ void ToolSPI::draw() {
         ui.textf(6 + i * 58, py + 9, C_TEXT, "G%d", pin(i));
     }
 
-    ui.footerf("%d byte(s)  [ENT] send  [M] mode  [F] speed", _len);
+    ui.footerf("%dB  [ENT]send [M]mode [F]speed", _len);
 }
 
 }  // namespace cg

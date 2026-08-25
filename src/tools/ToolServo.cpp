@@ -161,7 +161,7 @@ void ToolServo::draw() {
         y += 13;
     }
 
-    ui.footerf("[1-4] ch [<>] 1deg [^v] 10 [C] mid [S] sweep");
+    ui.footer("[1-4]ch [<>]1deg [^v]10 [S]swp");
 }
 
 }  // namespace cg

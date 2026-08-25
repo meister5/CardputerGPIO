@@ -25,7 +25,7 @@ public:
     const char* const* help(int& n) const override;
 
 private:
-    enum class Row : uint8_t { Bright, Beep, Arm, SdPins, LogRate, Reset, COUNT };
+    enum class Row : uint8_t { Bright, Sleep, Beep, Arm, SdPins, LogRate, Reset, COUNT };
 
     Row  _row     = Row::Bright;
     bool _confirm = false;

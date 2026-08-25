@@ -151,7 +151,7 @@ void ToolBoard::draw() {
         default:             drawInternal(); break;
     }
 
-    ui.footer("[TAB] page  [^v] scroll  [DEL] back");
+    ui.footer("[TAB] page   [^v] scroll");
 }
 
 }  // namespace cg

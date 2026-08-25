@@ -8,6 +8,9 @@
  *     ESC is Fn+`.
  *   - Arrows are Fn + ; , . /  (as printed on the keycaps). The library only
  *     tells you Fn is held and hands you the *base* character.
+ *   - Reaching for Fn on every cursor move is miserable on a thumb keyboard,
+ *     so ; . , / are arrows on their own and ` is "back". Shift or a text
+ *     field (setTextInput()) gets the characters back.
  *   - Fn+Shift+; hands you ':' rather than ';', so the Fn layer has to
  *     un-shift before matching.
  *   - Ctrl forces the shifted glyph into `word`, so Ctrl+C arrives as 'C' and
@@ -50,6 +53,7 @@ struct KeyEvent {
     bool    alt    = false;
     bool    opt    = false;
     bool    repeat = false;  // synthesised by auto-repeat rather than a fresh press
+    bool    phys   = false;  // came from the keys on the case, not from inject()
 
     explicit operator bool() const { return key != Key::None; }
 
@@ -92,6 +96,21 @@ public:
 
     bool capsLock() const { return _caps; }
 
+    // ── Text entry ────────────────────────────────────────────────────────
+    // ; . , / and ` are navigation by default, which is what makes the shell
+    // usable with one thumb. A screen that reads free text -- a WiFi
+    // password, a UART line, a setup name -- turns this on for as long as the
+    // field is open and gets those five characters back; Fn+; and friends
+    // still produce arrows there. The shell clears it on every screen change,
+    // so a tool that forgets cannot leave the cursor keys dead.
+    void setTextInput(bool on) { _textInput = on; }
+    bool textInput() const     { return _textInput; }
+
+    // millis() of the last press on the physical keyboard. Injected events do
+    // not count: driving the board from a browser is exactly when the screen
+    // should be allowed to go dark.
+    uint32_t lastActivity() const { return _lastPhys; }
+
     // Auto-repeat tuning (milliseconds).
     void setRepeat(uint16_t delayMs, uint16_t rateMs) {
         _repDelay = delayMs;
@@ -118,6 +137,9 @@ private:
 
     bool _caps      = false;
     bool _capsLatch = false;   // edge-detect for the Fn+Shift toggle
+    bool _textInput = false;
+
+    uint32_t _lastPhys = 0;
 
     void push(const KeyEvent& ev);
     void emitCode(uint16_t code, bool repeat);

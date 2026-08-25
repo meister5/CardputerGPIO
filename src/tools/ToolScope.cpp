@@ -179,15 +179,15 @@ void ToolScope::draw() {
         float win = (SAMPLES * 1000000.0f) / r;
         if (win >= 1000.0f) ui.textf(8, BODY_Y + 64, C_FAINT, "window %.2f ms", win / 1000.0f);
         else                ui.textf(8, BODY_Y + 64, C_FAINT, "window %.1f us", win);
-        ui.footer("[SPC] capture [T] trig [1-4] ch [+/-] rate");
+        ui.footer("[SPC]cap [T]trig [1-4]ch [+-]hz");
         return;
     }
 
     drawWaves();
 
     char f[48];
-    snprintf(f, sizeof(f), "[SPC] again [Z/X] zoom x%d %s", _zoom,
-             _triggered ? "" : " NO TRIG");
+    snprintf(f, sizeof(f), "[SPC]again [Z/X]zoom x%d%s", _zoom,
+             _triggered ? "" : "  NO TRIG");
     ui.footer(f);
 }
 

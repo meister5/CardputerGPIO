@@ -153,9 +153,8 @@ void PinPicker::draw() {
         ui.textf(6, noteY, C_DIM, "%.38s", _tool->roles()[_cursor].hint);
     }
 
-    ui.footer("[^v] role  [<>] pin  [R] reset  [ENT] save");
+    ui.footer("[^v]role [<>]pin [R]def [ENT]ok");
     ui.drawNotification();
-    ui.push();
 }
 
 }  // namespace cg

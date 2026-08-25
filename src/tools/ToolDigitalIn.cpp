@@ -148,7 +148,7 @@ void ToolDigitalIn::draw() {
         y += 17;
     }
 
-    ui.footer("[R] reset counters   [P] pull mode");
+    ui.footer("[R] reset counters  [P] pull");
 }
 
 

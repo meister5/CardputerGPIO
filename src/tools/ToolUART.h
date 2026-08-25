@@ -25,6 +25,9 @@ public:
     const Role* roles()     const override;
     int         roleCount() const override { return 2; }
 
+    // The whole screen is a line editor, so every character key types.
+    bool textEntry() const override { return true; }
+
     void onEnter() override;
     void onExit()  override;
     void tick()    override;

@@ -188,7 +188,7 @@ void ToolStepper::draw() {
         py += 10;
     }
 
-    ui.footer("[SPC] run [<>] jog [D] dir [+/-] speed [W] wiring");
+    ui.footer("[SPC]run [<>]jog [D]dir [+-]spd");
 }
 
 }  // namespace cg

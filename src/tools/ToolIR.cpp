@@ -209,7 +209,7 @@ void ToolIR::draw() {
     ui.textf(6, BODY_B - 9, C_FAINT, "%lu frame(s) sent  %s",
              (unsigned long)_sent, _ready ? "" : "RMT FAILED");
 
-    ui.footer("[SPC] send [TAB] field [<>] +/-1 [P] proto");
+    ui.footer("[SPC]send [TAB]field [<>]value");
 }
 
 }  // namespace cg

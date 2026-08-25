@@ -229,7 +229,7 @@ void ToolSetups::draw() {
         ui.text(40, y + 18, C_DIM,  "[Y] delete   any key: keep");
     }
 
-    ui.footer("[ENT] load  [S] save here  [D] delete");
+    ui.footer("[ENT]load [S]save [D]delete");
 }
 
 }  // namespace cg

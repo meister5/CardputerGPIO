@@ -176,8 +176,7 @@ void ToolDigitalOut::draw() {
         if (ok) ui.state(x + 80, y + 4, on);
     }
 
-    ui.footerf("[1-8] toggle [P] %s [SPC] run [+/-] %lums",
-               patName(_pat), (unsigned long)_stepMs);
+    ui.footerf("[1-8]pin [SPC]run [P]%s", patName(_pat));
 }
 
 }  // namespace cg

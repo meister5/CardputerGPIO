@@ -90,10 +90,9 @@ void WiringGuide::draw() {
     if (_mapView) drawMap();
     else          drawList();
 
-    ui.footer(_mapView ? "[TAB] list  [ENT] start  [C] pins  [DEL] back"
-                       : "[TAB] map   [ENT] start  [C] pins  [DEL] back");
+    ui.footer(_mapView ? "[TAB] list [ENT] start [C] pins"
+                       : "[TAB] map  [ENT] start [C] pins");
     ui.drawNotification();
-    ui.push();
 }
 
 void WiringGuide::drawList() {

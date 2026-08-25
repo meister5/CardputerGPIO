@@ -12,6 +12,15 @@ static const char* HELP[] = {
     "  ^ v    choose        < >    change",
     "  ENTER  toggle / act",
     "",
+    "Screen off: the backlight is the biggest",
+    "drain on this board, so the panel powers",
+    "down after this long with no key pressed.",
+    "The firmware keeps running -- outputs stay",
+    "driven, captures keep logging, and the web",
+    "interface keeps serving the same screen.",
+    "Any key wakes it, and that first press",
+    "does nothing else.",
+    "",
     "Arm outputs: every tool that can drive a",
     "pin asks first. Leave it on unless you",
     "are certain what is wired.",
@@ -41,6 +50,19 @@ void ToolSettings::adjust(int delta) {
         case Row::Bright: {
             int v = settings.brightness() + delta * 15;
             settings.setBrightness((uint8_t)(v < 10 ? 10 : (v > 255 ? 255 : v)));
+            break;
+        }
+        case Row::Sleep: {
+            // 0 means never; the rest is a short ladder rather than a slider,
+            // because the useful values are few and far apart.
+            static const uint16_t SECS[] = { 0, 15, 30, 60, 120, 300 };
+            const int N = (int)(sizeof(SECS) / sizeof(SECS[0]));
+            int idx = 0;
+            for (int i = 0; i < N; i++) if (settings.screenOff() >= SECS[i]) idx = i;
+            idx += delta;
+            if (idx < 0)  idx = 0;
+            if (idx >= N) idx = N - 1;
+            settings.setScreenOff(SECS[idx]);
             break;
         }
         case Row::Beep:
@@ -109,37 +131,48 @@ void ToolSettings::draw() {
     snprintf(r[0].val, sizeof(r[0].val), "%d", settings.brightness());
     r[0].col = C_TEXT;
 
-    r[1].label = "key beep";
-    snprintf(r[1].val, sizeof(r[1].val), "%s", settings.beep() ? "on" : "off");
-    r[1].col = settings.beep() ? C_HIGH : C_DIM;
+    r[1].label = "screen off";
+    if (settings.screenOff() == 0)
+        snprintf(r[1].val, sizeof(r[1].val), "never");
+    else if (settings.screenOff() < 60)
+        snprintf(r[1].val, sizeof(r[1].val), "%u s", settings.screenOff());
+    else
+        snprintf(r[1].val, sizeof(r[1].val), "%u min", settings.screenOff() / 60);
+    r[1].col = settings.screenOff() ? C_TEXT : C_WARN;
 
-    r[2].label = "arm outputs";
-    snprintf(r[2].val, sizeof(r[2].val), "%s", settings.armOutputs() ? "on" : "OFF");
-    r[2].col = settings.armOutputs() ? C_HIGH : C_WARN;
+    r[2].label = "key beep";
+    snprintf(r[2].val, sizeof(r[2].val), "%s", settings.beep() ? "on" : "off");
+    r[2].col = settings.beep() ? C_HIGH : C_DIM;
 
-    r[3].label = "allow SD pins";
-    snprintf(r[3].val, sizeof(r[3].val), "%s", settings.allowSdPins() ? "YES" : "no");
-    r[3].col = settings.allowSdPins() ? C_WARN : C_HIGH;
+    r[3].label = "arm outputs";
+    snprintf(r[3].val, sizeof(r[3].val), "%s", settings.armOutputs() ? "on" : "OFF");
+    r[3].col = settings.armOutputs() ? C_HIGH : C_WARN;
 
-    r[4].label = "log interval";
-    snprintf(r[4].val, sizeof(r[4].val), "%lu ms", (unsigned long)logger.interval());
-    r[4].col = C_TEXT;
+    r[4].label = "allow SD pins";
+    snprintf(r[4].val, sizeof(r[4].val), "%s", settings.allowSdPins() ? "YES" : "no");
+    r[4].col = settings.allowSdPins() ? C_WARN : C_HIGH;
 
-    r[5].label = "factory reset";
-    snprintf(r[5].val, sizeof(r[5].val), "%s", "[ENTER]");
-    r[5].col = C_LOW;
+    r[5].label = "log interval";
+    snprintf(r[5].val, sizeof(r[5].val), "%lu ms", (unsigned long)logger.interval());
+    r[5].col = C_TEXT;
 
+    r[6].label = "factory reset";
+    snprintf(r[6].val, sizeof(r[6].val), "%s", "[ENTER]");
+    r[6].col = C_LOW;
+
+    // Seven rows in 107 px of body: 15 apiece, which is the tightest that
+    // still leaves the selected row a visible band around its text.
     for (int i = 0; i < (int)Row::COUNT; i++) {
-        int  y   = BODY_Y + 1 + i * 16;
+        int  y   = BODY_Y + 1 + i * 15;
         bool sel = (i == (int)_row);
-        if (sel) ui.listRow(y - 1, 15, true);
-        ui.text(8, y + 3, sel ? C_TITLE : C_DIM, r[i].label);
-        ui.text(126, y + 3, r[i].col, r[i].val);
+        if (sel) ui.listRow(y - 1, 14, true);
+        ui.text(8, y + 2, sel ? C_TITLE : C_DIM, r[i].label);
+        ui.text(126, y + 2, r[i].col, r[i].val);
     }
 
     // Brightness gets a bar, because a number alone tells you nothing.
     if (_row == Row::Bright)
-        ui.hbar(170, BODY_Y + 4, 60, 7, settings.brightness() / 255.0f, C_INFO);
+        ui.hbar(170, BODY_Y + 3, 60, 7, settings.brightness() / 255.0f, C_INFO);
 
     if (_confirm) {
         int y = ui.modal("Factory reset?", 190, 46, C_LOW);
@@ -147,7 +180,7 @@ void ToolSettings::draw() {
         ui.text(30, y + 18, C_DIM,  "[Y] confirm   any key: cancel");
     }
 
-    ui.footer("[^v] item  [<>] change  [ENT] toggle");
+    ui.footer("[^v]item [<>]change [ENT]set");
 }
 
 }  // namespace cg

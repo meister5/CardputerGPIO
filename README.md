@@ -149,17 +149,35 @@ Launcher the layout is Launcher's, and it sizes the OTA slot itself.
 
 This keyboard has **no arrow keys and no ESC key**. They are printed on the
 keycaps as an Fn layer, and the library does not resolve it for you — so this
-firmware does:
+firmware does, and then goes one better: the four keys that carry an arrow on
+the cap *are* the arrows, with no Fn to hold down.
 
 ```
-  Fn + ;   up          Fn + ,   left        Fn + `   ESC
-  Fn + .   down        Fn + /   right       Fn + Aa  caps lock
-  Fn + 1-0 F1 - F10    Backspace  back      Fn + Bksp  forward delete
+  ;   up        ,   left       `  back        DEL  back
+  .   down      /   right      Fn + `   ESC   Fn + Aa   caps lock
+  Fn + 1-0  F1 - F10           Fn + Bksp  forward delete
 ```
+
+`Fn + ; . , /` still works if your thumb is already there, and **Shift** always
+types the character — `Shift+;` is `:`. Those five keys also type themselves
+again, unshifted, on any screen that reads text — a WiFi password, a UART line, a
+setup name — and the footer's `` ` back `` hint disappears while they do, so it
+never offers a key that would type instead.
 
 Held keys auto-repeat. **F1** opens help from anywhere — the global key
 reference in the menu, and a page about the tool itself when one is running.
 **F2** starts and stops CSV logging.
+
+### The screen turns itself off
+
+After 30 seconds with nothing pressed the backlight goes out — it is the biggest
+single drain on this board. Nothing else stops: outputs stay driven, a capture
+keeps logging, and the web interface keeps serving the same screen you would have
+been looking at. Any key brings it back, and that first press does nothing else.
+Set it from `off` to 5 minutes in **Settings**.
+
+Only the keys on the case count as activity. Driving the board from a browser is
+exactly when the panel is wasted power, so it lets the screen go dark.
 
 ---
 
@@ -173,8 +191,8 @@ It is not a second implementation of the toolbox. The browser drives the same
 state machine the keyboard drives, and sees the device's actual framebuffer
 streamed as changed tiles — so every tool, every dialog and anything added
 later shows up with no web code written for it. Your arrow keys, Esc, Tab,
-Enter, Backspace and F1–F10 map straight through, which means you do not need
-the Fn layer.
+Enter, Backspace and F1–F10 map straight through, so a full-size keyboard drives
+the device as a full-size keyboard.
 
 On top of that it adds native pages for the things a browser is genuinely
 better at: assigning pins for **every** tool from one table, editing settings,
@@ -304,7 +322,7 @@ log; the rest have nothing meaningful to put in a row.
 CardputerGPIO.ino        registers tools; the loop is three lines
 src/core/
   Board.{h,cpp}          the pin map and every safety decision
-  Keys.{h,cpp}           Fn layer, auto-repeat, Ctrl/Shift normalisation
+  Keys.{h,cpp}           bare arrow layer, auto-repeat, Ctrl/Shift fixes
   UI.{h,cpp}             one full-screen sprite + the widget kit
   Pins.{h,cpp}           safety-gated GPIO, calibrated ADC, LEDC, PCNT
   Settings.{h,cpp}       NVS preferences and per-tool pin assignments

@@ -576,6 +576,7 @@ void WebPortal::hSettingsGet() {
     Json j(buf, sizeof(buf));
     j.objOpen();
     j.kv("brightness", (int)settings.brightness());
+    j.kv("screenOff", (int)settings.screenOff());
     j.kv("beep", settings.beep());
     j.kv("armOutputs", settings.armOutputs());
     j.kv("allowSdPins", settings.allowSdPins());
@@ -588,6 +589,12 @@ void WebPortal::hSettingsSet() {
     _requests++;
     if (_server.hasArg("brightness"))
         settings.setBrightness((uint8_t)argInt(_server, "brightness", settings.brightness()));
+    if (_server.hasArg("screenOff")) {
+        int v = argInt(_server, "screenOff", (int)settings.screenOff());
+        if (v < 0)    v = 0;
+        if (v > 3600) v = 3600;
+        settings.setScreenOff((uint16_t)v);
+    }
     if (_server.hasArg("beep"))
         settings.setBeep(argBool(_server, "beep", settings.beep()));
     if (_server.hasArg("armOutputs"))

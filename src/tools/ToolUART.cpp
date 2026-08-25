@@ -200,7 +200,7 @@ void ToolUART::draw() {
 
     if (!_open) ui.textRight(SCR_W - 4, BODY_Y + 1, C_LOW, "CLOSED");
 
-    ui.footerf("F2 hex F3 swap F4 usb F5 baud  rx%lu tx%lu",
+    ui.footerf("F2hex F3swp F4usb F5baud rx%lu tx%lu",
                (unsigned long)_rxCount, (unsigned long)_txCount);
 }
 

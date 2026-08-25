@@ -26,6 +26,8 @@ public:
     const char* blurb() const override { return "store/recall pin maps"; }
     Cat         cat()   const override { return Cat::System; }
 
+    bool textEntry() const override { return _mode == Mode::Naming; }
+
     void onEnter() override;
     void draw()    override;
     bool onKey(const KeyEvent& ev) override;

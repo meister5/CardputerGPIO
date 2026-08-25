@@ -25,6 +25,12 @@ public:
     bool beep() const { return _beep; }
     void setBeep(bool v);
 
+    // Seconds of no keyboard activity before the display powers down; 0 keeps
+    // it on forever. Only the keys on the case count as activity -- driving
+    // the board from a browser is precisely when the panel is wasted power.
+    uint16_t screenOff() const { return _screenOff; }
+    void     setScreenOff(uint16_t secs);
+
     // microSD shares G14/G39/G40 with the EXT header. Off by default so a
     // stray assignment cannot fight the card reader.
     bool allowSdPins() const { return _allowSd; }
@@ -72,7 +78,8 @@ public:
     void factoryReset();
 
 private:
-    uint8_t _brightness = 110;
+    uint8_t  _brightness = 110;
+    uint16_t _screenOff  = 30;
     bool    _beep       = true;
     bool    _allowSd    = false;
     bool    _armOutputs = true;
@@ -84,6 +91,7 @@ private:
     char    _webPass[33] = {};
 
     void putU8(const char* key, uint8_t v);
+    void putU16(const char* key, uint16_t v);
     static void keyFor(const char* toolId, int role, char* out, int n);
 };
 
