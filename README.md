@@ -1,8 +1,23 @@
 # CardputerGPIO
 
-A GPIO workbench for the **M5Stack Cardputer ADV**. Twenty-one tools behind one
+**A GPIO workbench that lives on your Cardputer.** Twenty-one tools behind one
 menu: drive pins, measure them, talk to buses, generate signals, and log the
 results to CSV — without writing a sketch for each thing you want to try.
+
+[![Release](https://img.shields.io/github/v/release/meister5/CardputerGPIO?style=flat-square)](https://github.com/meister5/CardputerGPIO/releases/latest)
+[![License](https://img.shields.io/github/license/meister5/CardputerGPIO?style=flat-square)](LICENSE)
+![Board](https://img.shields.io/badge/board-Cardputer%20ADV-orange?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-ESP32--S3-blue?style=flat-square)
+
+<!-- HERO IMAGE — record a ~10s GIF of the menu plus one tool running, save it
+     as docs/img/hero.gif, then delete this comment's markers to publish it.
+     This is the single highest-value change left on this README.
+
+<p align="center">
+  <img src="docs/img/hero.gif" alt="CardputerGPIO running on an M5Stack Cardputer ADV" width="600">
+</p>
+
+-->
 
 Everything runs on the device, and there is nothing to install beyond the three
 M5Stack libraries. Optionally it also serves a **web interface** over WiFi —
