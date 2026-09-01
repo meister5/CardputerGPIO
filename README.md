@@ -1,8 +1,9 @@
 # CardputerGPIO
 
-A GPIO workbench that runs on the Cardputer. Twenty-one tools sit behind one
-menu: drive pins, measure them, talk to buses, generate signals, and log the
-results to CSV, without writing a sketch for each thing you want to try.
+A GPIO workbench I built for the Cardputer, because I got tired of writing a
+sketch for every pin I wanted to poke. Twenty-one tools sit behind one menu:
+drive pins, measure them, talk to buses, generate signals, and log the results
+to CSV. I use it on my own ADV, on real circuits.
 
 [![Release](https://img.shields.io/github/v/release/meister5/CardputerGPIO?style=flat-square)](https://github.com/meister5/CardputerGPIO/releases/latest)
 [![License](https://img.shields.io/github/license/meister5/CardputerGPIO?style=flat-square)](LICENSE)
@@ -11,8 +12,8 @@ results to CSV, without writing a sketch for each thing you want to try.
 
 Everything runs on the device, and there is nothing to install beyond the three
 M5Stack libraries. It can also serve a web interface over WiFi: the same tools,
-driven from a browser with a full keyboard and a larger screen, which is an
-easier place to assign pins. See [docs/WEB.md](docs/WEB.md).
+driven from a browser with a full keyboard and a larger screen, which I find a
+much easier place to assign pins. See [docs/WEB.md](docs/WEB.md).
 
 > **Board support:** Cardputer **ADV** only. The pin map, the keyboard driver
 > and the I²C layout all differ from the original Cardputer v1.1. See
@@ -50,10 +51,10 @@ well; the ADV is distinguished at runtime, not at compile time.
 | **M5GFX**       | 0.2.10  | 0.2.27  | display driver and the `M5Canvas` sprite |
 
 Installing **M5Cardputer** pulls in the other two as dependencies, so say yes
-when the IDE offers. That is the whole list. 1-Wire, DHT, NeoPixel, IR, SPI and
-the JSON the web interface speaks are all implemented in this repository rather
-than pulled from libraries, which keeps the version matrix small and the timing
-code visible. WiFi, WebServer, ESPmDNS, SD and Preferences ship with the ESP32
+when the IDE offers. That is the whole list. I implemented 1-Wire, DHT,
+NeoPixel, IR, SPI and the JSON the web interface speaks here rather than pulling
+them from libraries, which keeps the version matrix small and leaves the timing
+code where I can read it. WiFi, WebServer, ESPmDNS, SD and Preferences ship with the ESP32
 core itself and need no action in Library Manager.
 
 ### 3. Board settings
@@ -153,9 +154,9 @@ Launcher the layout is Launcher's, and it sizes the OTA slot itself.
 ## The keyboard
 
 This keyboard has no arrow keys and no ESC key. They are printed on the keycaps
-as an Fn layer, and the library does not resolve it for you, so this firmware
-does. The four keys that carry an arrow on the cap work as the arrows directly,
-with no Fn to hold down.
+as an Fn layer, and the library does not resolve it for you, so I do it here.
+The four keys that carry an arrow on the cap work as the arrows directly, with
+no Fn to hold down.
 
 ```
   ;   up        ,   left       `  back        DEL  back
@@ -175,7 +176,7 @@ and stops CSV logging.
 
 ### The screen turns itself off
 
-After 30 seconds with nothing pressed the backlight goes out, since it is the
+After 30 seconds with nothing pressed I turn the backlight off, since it is the
 biggest single drain on this board. Nothing else stops: outputs stay driven, a
 capture keeps logging, and the web interface keeps serving the same screen you
 would have been looking at. Any key brings it back, and that first press does
@@ -192,22 +193,22 @@ Open **Web Interface** on the device, pick *access point* or *join a network*,
 and press Enter. The screen shows the network name, the password and the
 address to open.
 
-It is not a second implementation of the toolbox. The browser drives the same
-state machine the keyboard drives, and sees the device's actual framebuffer
-streamed as changed tiles, so every tool, every dialog and anything added later
-shows up with no web code written for it. Arrow keys, Esc, Tab, Enter,
+I did not write a second implementation of the toolbox for the browser. It
+drives the same state machine the keyboard drives, and sees the device's actual
+framebuffer streamed as changed tiles, so every tool, every dialog and anything
+I add later shows up with no web code written for it. Arrow keys, Esc, Tab, Enter,
 Backspace and F1–F10 map straight through.
 
-On top of that it adds native pages for the things a browser handles better:
+On top of that I added native pages for the things a browser handles better:
 assigning pins for every tool from one table, editing settings, naming and
 loading setups, reading the pinout, and downloading CSV captures.
 
 There are two costs:
 
 * **G13 and G15 stop working as analog inputs** while the radio is up, because
-  ADC2 shares its hardware with WiFi. They are withdrawn from the pin picker and
-  an already-saved assignment turns red on the wiring screen, rather than
-  quietly reading zero. Nothing else is affected.
+  ADC2 shares its hardware with WiFi. I withdraw them from the pin picker and
+  turn an already-saved assignment red on the wiring screen, rather than let it
+  quietly read zero. Nothing else is affected.
 * **It needs the 3 MB app partition**, as described above.
 
 **Set a password if you put it on a shared network.** Out of the box there is
@@ -273,27 +274,27 @@ saved pin assignments. Full details and the HTTP API are in
 
 ## Safety
 
-This gets wired to real hardware, so several behaviours are deliberate.
+I wire this to real hardware, so a few things are deliberate.
 
-**G8 and G9 are refused everywhere.** They carry the system I²C bus that the
+**I refuse G8 and G9 everywhere.** They carry the system I²C bus that the
 keyboard controller sits on. Driving them takes the keyboard down with it and
-the only way back is a reflash. They are visible in the pin table and in the
-I²C scanner; they are never offered as GPIO.
+the only way back is a reflash. I show them in the pin table and in the I²C
+scanner, but never offer them as GPIO.
 
 **Outputs have to be armed.** Any tool that can drive a pin asks for
-confirmation before it starts, showing the pins it is about to take, so a pin
-set saved weeks ago cannot start sourcing current the moment you press Enter.
+confirmation before it starts and shows the pins it is about to take, so a pin
+set I saved weeks ago cannot start sourcing current the moment I press Enter.
 Turn it off in Settings if you find it tiresome.
 
-**The microSD pins are held back.** G14, G39 and G40 are on the EXT header
-*and* on the card reader's SPI bus. They stay out of the pin pools until you
-turn on *allow SD pins*, and CSV-to-card logging refuses to mount while a tool
-holds one of them.
+**I hold the microSD pins back.** G14, G39 and G40 are on the EXT header *and*
+on the card reader's SPI bus, so they stay out of the pin pools until you turn
+on *allow SD pins*, and CSV-to-card logging refuses to mount while a tool holds
+one of them.
 
-**A pin that cannot do its job says so.** The wiring screen shown before every
-tool starts marks an unusable assignment in red with the reason (locked, held
-back for the microSD bus, no ADC on that pin, or ADC2 while the radio is up)
-instead of letting the tool run and report zeros.
+**A pin that cannot do its job says so.** The wiring screen before every tool
+marks an unusable assignment in red with the reason (locked, held back for the
+microSD bus, no ADC on that pin, or ADC2 while the radio is up) instead of
+letting the tool run and report zeros.
 
 **Everything is 3.3 V.** The 5 V pins on the headers are supply rails. The GPIO
 is not 5 V tolerant, and nothing in the firmware can protect you from that.
@@ -353,9 +354,9 @@ your driver, this one is an ADC input") and gets pin assignment, conflict
 checking, a wiring diagram, persistence and the arm prompt from the shell. It
 implements `draw()` and `onKey()`, and optionally `logHeader()` / `logRow()` to
 gain CSV logging. It never touches the keyboard, never pushes the sprite, and
-never calls `M5Cardputer.update()`. The shell owns all of that, which is why
+never calls `M5Cardputer.update()`. I gave the shell all of that, which is why
 the frame rate and the navigation are the same everywhere, and why a new tool
-appears in the web interface without a line of web code.
+shows up in the web interface without a line of web code.
 
 Adding a tool is one header, one source file, and one `shell.add()` line.
 
@@ -377,8 +378,8 @@ class ToolThing : public cg::Tool {
 ```
 
 `id()` is a persistence key. It is what saved pin assignments are filed under,
-it is capped at 8 characters by the 15-character NVS key limit, and renaming
-one orphans the user's saved pins.
+it is capped at 8 characters by the 15-character NVS key limit, and renaming one
+orphans your saved pins.
 
 ---
 
