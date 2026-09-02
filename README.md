@@ -3,7 +3,7 @@
 A GPIO workbench I built for the Cardputer, because I got tired of writing a
 sketch for every pin I wanted to poke. Twenty-one tools sit behind one menu:
 drive pins, measure them, talk to buses, generate signals, and log the results
-to CSV. I use it on my own ADV, on real circuits.
+to CSV. I use it on real circuits.
 
 [![Release](https://img.shields.io/github/v/release/meister5/CardputerGPIO?style=flat-square)](https://github.com/meister5/CardputerGPIO/releases/latest)
 [![License](https://img.shields.io/github/license/meister5/CardputerGPIO?style=flat-square)](LICENSE)
